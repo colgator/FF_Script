@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[440]:
 
 
 #coding=utf-8
@@ -49,7 +49,7 @@ print(a.scheme,a.netloc)
 print(type(a.scheme))
 
 
-# In[ ]:
+# In[478]:
 
 
 #ipynb檔  轉成 python檔
@@ -67,16 +67,7 @@ IpynbToPython()
 FF_().user_agent['Pc']
 
 
-# In[ ]:
-
-
-def test(lottery_id,bet_type_code):
-    sql = f"select actual_bonus,lhc_theory_bonus from game_award "                   "where LOTTERYID = {lottery_id} "                   f"and bet_type_code like '%{bet_type_code}%'"
-    return sql
-test('123','456')
-
-
-# In[ ]:
+# In[385]:
 
 
 class FF_(): #4.0專案
@@ -143,6 +134,20 @@ class FF_(): #4.0專案
             i.start()
         for i in threads:
             i.join()
+    def test_request(self,data,env_url,func_url,user,req_type='post'
+                     ,req_header=None):#後續 需要post 案例,直接使用此方式, 參數 加進來 即可
+        if req_header is None:# header 不作處理  ,照 Account_Cookie 預設的header給 
+            Pc_header= FF_().Account_Cookie(user)
+        else:
+            req_key = list(req_header).keys()[0]
+            Pc_header[req_key ] = req_header[req_key]
+        if req_type == 'post': #預設post
+             FF_().session_post(env_url,'/%s'%func_url,
+                          json.dumps(data),Pc_header)
+        else:# get
+            FF_().session_get(env_url,'/%s'%func_url,
+                              json.dumps(data),Pc_header)
+        print(r.text)
     def web_issuecode(self,lottery,account):#頁面產生  獎期用法,  取代DB連線問題
         now_time = int(time.time())
         header = {
@@ -199,7 +204,7 @@ class FF_(): #4.0專案
             lottery_dict = defaultdict(list)
             for index,con in enumerate(rows):
                 lottery_dict[index].append(con[0])
-                lottery_dict[index].append(con[0])
+                lottery_dict[index].append(con[1])
             return lottery_dict
         print('lottery_dict')
         
@@ -251,7 +256,7 @@ class FF_(): #4.0專案
             return('錯誤%s'%url)
         postData = {
         "username": account,
-        "param" : self.param[0],#固定寫死即可
+        "param" : self.param[0],#固定寫死即可 , self.param 為一個tuple
         "password": FF_().md5(password,self.param[0])# self.param 為一個 tuple (byte的關係)
         }
         Pc_header = {'User-Agent':self.user_agent[source]}
@@ -263,6 +268,7 @@ class FF_(): #4.0專案
                 if user in FF_().cookies:# 刪除原本已經存菜的key, 重新獲得
                     del FF_().cookies[user]
                 FF_().cookies.setdefault(account,r.cookies.get_dict()['ANVOID'])#存放用戶cookie
+                
                 #user_.setdefault(account,userAgent)#存放用戶 useragent
                 t = time.strftime('%Y%m%d %H:%M:%S')
                 print('現在時間:'+time.strftime('%Y%m%d %H:%M:%S'))
@@ -296,19 +302,9 @@ class FF_(): #4.0專案
             len_order = 1
         if lottery == 'btcctp':
             data_ = {"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":1,"ball":ball,"type":"chungtienpao.chungtienpao.chungtienpao","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan ,"amount":100.00*len_order}
-        elif lottery in ['cqssc','hljssc','xjssc','tjssc','fhjlssc','fhcqc','fhxjc']:
-            '''
-            if lottery == 'cqssc':
-                data_ = {"gameType":"cqssc","isTrace":0,"traceWinStop":0,"traceStopValue":-1,
-            "balls":[{"id":1,"ball":"-,-,5,0,5","type":"housan.zhixuan.fushi","moneyunit":"1",
-            "multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan,"redDiscountAmount":0,
-            "amount":2*len_order}
-            else:
-            '''
-            data_={"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":107,"ball":"-,-,-,-,-,-,-,-,龙,-","type":"longhu.longhudou.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":106,"ball":"双,大","type":"daxiaodanshuang.dxds.houer","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":105,"ball":"小","type":"daxiaodanshuang.dxds.houyi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":104,"ball":"小,双","type":"daxiaodanshuang.dxds.qianer","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":103,"ball":"小","type":"daxiaodanshuang.dxds.qianyi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":102,"ball":"小","type":"daxiaodanshuang.dxds.zonghe","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":101,"ball":"-,3,-,-,-","type":"yixing_2000.dingweidan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":100,"ball":"8","type":"houer_2000.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":9},{"id":99,"ball":"13","type":"houer_2000.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":3},{"id":98,"ball":"25","type":"houer_2000.zuxuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":97,"ball":"1,8","type":"houer_2000.zuxuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":96,"ball":"5","type":"houer_2000.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":10},{"id":95,"ball":"14","type":"houer_2000.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":5},{"id":94,"ball":"65","type":"houer_2000.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":93,"ball":"-,-,-,5,9","type":"houer_2000.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":92,"ball":"2,7","type":"housan_2000.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":91,"ball":"7","type":"housan_2000.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":90,"ball":"047","type":"housan_2000.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":89,"ball":"336","type":"housan_2000.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":88,"ball":"6","type":"housan_2000.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":87,"ball":"024","type":"housan_2000.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":86,"ball":"2,5,9","type":"housan_2000.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":85,"ball":"5,9","type":"housan_2000.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":84,"ball":"11","type":"housan_2000.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":14},{"id":83,"ball":"0","type":"housan_2000.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":10},{"id":82,"ball":"1","type":"housan_2000.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":3},{"id":81,"ball":"904","type":"housan_2000.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":80,"ball":"-,-,3,7,4","type":"housan_2000.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":79,"ball":"-,0,-,-,-","type":"yixing.dingweidan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":78,"ball":"8","type":"houer.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":9},{"id":77,"ball":"12","type":"houer.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":3},{"id":76,"ball":"48","type":"houer.zuxuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":75,"ball":"4,6","type":"houer.zuxuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":74,"ball":"8","type":"houer.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":4},{"id":73,"ball":"3","type":"houer.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":4},{"id":72,"ball":"12","type":"houer.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":71,"ball":"-,-,-,7,9","type":"houer.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":70,"ball":"8","type":"qianer.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":9},{"id":69,"ball":"10","type":"qianer.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":4},{"id":68,"ball":"37","type":"qianer.zuxuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":67,"ball":"6,8","type":"qianer.zuxuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":66,"ball":"7","type":"qianer.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":6},{"id":65,"ball":"9","type":"qianer.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":10},{"id":64,"ball":"23","type":"qianer.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":63,"ball":"6,7,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":62,"ball":"1,2","type":"housan.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":61,"ball":"5","type":"housan.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":60,"ball":"457","type":"housan.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":59,"ball":"113","type":"housan.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":58,"ball":"1","type":"housan.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":57,"ball":"236","type":"housan.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":56,"ball":"5,6,9","type":"housan.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":55,"ball":"6,8","type":"housan.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":54,"ball":"16","type":"housan.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":14},{"id":53,"ball":"3","type":"housan.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":126},{"id":52,"ball":"9","type":"housan.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":55},{"id":51,"ball":"561","type":"housan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":50,"ball":"-,-,3,6,4","type":"housan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":49,"ball":"1,9","type":"zhongsan.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":48,"ball":"8","type":"zhongsan.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":47,"ball":"179","type":"zhongsan.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":46,"ball":"002","type":"zhongsan.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":45,"ball":"2","type":"zhongsan.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":44,"ball":"018","type":"zhongsan.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":43,"ball":"0,4,9","type":"zhongsan.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":42,"ball":"0,9","type":"zhongsan.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":41,"ball":"20","type":"zhongsan.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":8},{"id":40,"ball":"7","type":"zhongsan.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":126},{"id":39,"ball":"042","type":"zhongsan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":38,"ball":"398","type":"zhongsan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":37,"ball":"-,7,8,2,-","type":"zhongsan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":36,"ball":"1,2","type":"qiansan.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":35,"ball":"5","type":"qiansan.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":34,"ball":"035","type":"qiansan.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":33,"ball":"113","type":"qiansan.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":32,"ball":"9","type":"qiansan.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":31,"ball":"277","type":"qiansan.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":30,"ball":"1,7,8","type":"qiansan.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":29,"ball":"1,8","type":"qiansan.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":28,"ball":"9","type":"qiansan.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":11},{"id":27,"ball":"8","type":"qiansan.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":96},{"id":26,"ball":"0","type":"qiansan.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":25,"ball":"037","type":"qiansan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":24,"ball":"9,6,9,-,-","type":"qiansan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":23,"ball":"5,7","type":"sixing.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":22,"ball":"3","type":"sixing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":21,"ball":"0,9","type":"sixing.zuxuan.zuxuan4","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":20,"ball":"2,9","type":"sixing.zuxuan.zuxuan6","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":19,"ball":"5,03","type":"sixing.zuxuan.zuxuan12","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":18,"ball":"3,4,5,8","type":"sixing.zuxuan.zuxuan24","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":17,"ball":"9545","type":"sixing.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":16,"ball":"-,5,5,2,3","type":"sixing.zhixuan.fushi","moneyunit":"1",
-            "multiple":1,"awardMode":awardmode,"num":1},{"id":15,"ball":"8",
-                "type":"wuxing.quwei.sijifacai","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":14,"ball":"8","type":"wuxing.quwei.sanxingbaoxi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":13,"ball":"7","type":"wuxing.quwei.haoshichengshuang","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":12,"ball":"4","type":"wuxing.quwei.yifanfengshun","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":11,"ball":"0,5,8","type":"wuxing.budingwei.sanmabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":10,"ball":"2,7","type":"wuxing.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":9,"ball":"5","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":8,"ball":"9,8","type":"wuxing.zuxuan.zuxuan5","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":7,"ball":"5,1","type":"wuxing.zuxuan.zuxuan10","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":6,"ball":"4,01","type":"wuxing.zuxuan.zuxuan20","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":5,"ball":"57,4","type":"wuxing.zuxuan.zuxuan30","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":4,"ball":"6,357","type":"wuxing.zuxuan.zuxuan60","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":3,"ball":"0,1,5,6,7","type":"wuxing.zuxuan.zuxuan120","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":2,"ball":"32077","type":"wuxing.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":1,"ball":"1,7,1,0,6","type":"wuxing.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan ,"amount":1680*len_order}
+        elif lottery in ['cqssc','hljssc','xjssc','tjssc','fhjlssc','fhcqc','fhxjc']:#共同玩法的時彩系列
 
+            data_={"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":97,"ball":"龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和","type":"longhu.longhudou.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":96,"ball":"大|小|单|双,大|小|单|双","type":"daxiaodanshuang.dxds.houer","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":16},{"id":95,"ball":"大|小|单|双","type":"daxiaodanshuang.dxds.houyi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":94,"ball":"大|小|单|双,大|小|单|双","type":"daxiaodanshuang.dxds.qianer","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":16},{"id":93,"ball":"大|小|单|双","type":"daxiaodanshuang.dxds.qianyi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":92,"ball":"大|小|单|双","type":"daxiaodanshuang.dxds.zonghe","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":91,"ball":"01234,01234,01234,01234,01234","type":"yixing_2000.dingweidan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":25},{"id":90,"ball":"6","type":"houer_2000.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":89,"ball":"13,14,15,16,17","type":"houer_2000.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":88,"ball":"5,6,7,8,9","type":"houer_2000.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":87,"ball":"1,3,5,7,9","type":"houer_2000.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":50},{"id":86,"ball":"13,14,15","type":"houer_2000.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":85,"ball":"-,-,-,0123456789,0123456789","type":"houer_2000.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":84,"ball":"0,1,2,3,4","type":"housan_2000.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":83,"ball":"5,6,7,8,9","type":"housan_2000.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":82,"ball":"2","type":"housan_2000.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":81,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan_2000.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":120},{"id":80,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan_2000.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":90},{"id":79,"ball":"2,20","type":"housan_2000.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":78,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan_2000.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1000},{"id":77,"ball":"3,5,6,7,10","type":"housan_2000.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":158},{"id":76,"ball":"-,-,0123456789,0123456789,0123456789","type":"housan_2000.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1000},{"id":75,"ball":"0123456789,0123456789,0123456789,0123456789,0123456789","type":"yixing.dingweidan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":50},{"id":74,"ball":"7","type":"houer.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":73,"ball":"15,16,17","type":"houer.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":72,"ball":"0,1,2,3,4,5,6,7,8,9","type":"houer.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":45},{"id":71,"ball":"0,1,2,3,4,5,6,7,8,9","type":"houer.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":70,"ball":"1,2,3,4,5,6","type":"houer.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":27},{"id":69,"ball":"-,-,-,0123456789,0123456789","type":"houer.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":68,"ball":"1","type":"qianer.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":67,"ball":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17","type":"qianer.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":45},{"id":66,"ball":"0,1,2,3,4,5,6,7,8,9","type":"qianer.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":45},{"id":65,"ball":"0,1,2,3,4,5,6,7,8,9","type":"qianer.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":64,"ball":"0,1,2,3,4","type":"qianer.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":63,"ball":"01234,01234,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":25},{"id":62,"ball":"0,1,2,3,4","type":"housan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":61,"ball":"5,6,7,8,9","type":"housan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":60,"ball":"8","type":"housan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":59,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":120},{"id":58,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":90},{"id":57,"ball":"9,10","type":"housan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":24},{"id":56,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1000},{"id":55,"ball":"14,15","type":"housan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":148},{"id":54,"ball":"-,-,01234,01234,01234","type":"housan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":125},{"id":53,"ball":"0,1,2,3,4","type":"zhongsan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":52,"ball":"5,6,7,8,9","type":"zhongsan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":51,"ball":"5","type":"zhongsan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":50,"ball":"0,1,2,3,4","type":"zhongsan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":49,"ball":"5,6,7,8,9","type":"zhongsan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":48,"ball":"13,14,15,16,17","type":"zhongsan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":71},{"id":47,"ball":"5,6,7,8,9","type":"zhongsan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":570},{"id":46,"ball":"0,1,19,20","type":"zhongsan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":85},{"id":45,"ball":"-,01234,01234,01234,-","type":"zhongsan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":125},{"id":44,"ball":"0,1,2,3,4","type":"qiansan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":43,"ball":"5,6,7,8,9","type":"qiansan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":42,"ball":"9","type":"qiansan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":41,"ball":"0,1,2,3,4","type":"qiansan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":40,"ball":"5,6,7,8,9","type":"qiansan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":39,"ball":"13","type":"qiansan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":38,"ball":"5,6,7,8,9","type":"qiansan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":570},{"id":37,"ball":"27","type":"qiansan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":36,"ball":"01234,01234,01234,-,-","type":"qiansan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":125},{"id":35,"ball":"0,1,2,3,4","type":"sixing.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":34,"ball":"5,6,7,8,9","type":"sixing.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":33,"ball":"02468,02468","type":"sixing.zuxuan.zuxuan4","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":32,"ball":"1,3,5,7,9","type":"sixing.zuxuan.zuxuan6","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":31,"ball":"01234,01234","type":"sixing.zuxuan.zuxuan12","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":30,"ball":"5,6,7,8,9","type":"sixing.zuxuan.zuxuan24","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":29,"ball":"1234","type":"sixing.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":28,"ball":"-,01234,01234,01234,01234","type":"sixing.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":625},{"id":27,"ball":"0,2,4,6,8","type":"wuxing.quwei.sijifacai","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":26,"ball":"1,3,5,7,9","type":"wuxing.quwei.sanxingbaoxi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":25,"ball":"0,1,2,3,4","type":"wuxing.quwei.haoshichengshuang","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":24,"ball":"5,6,7,8,9","type":"wuxing.quwei.yifanfengshun","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":23,"ball":"0,2,4,6,8","type":"wuxing.budingwei.sanmabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":22,"ball":"0,1,2,3,4","type":"wuxing.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":21,"ball":"5,6,7,8,9","type":"wuxing.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":20,"ball":"0123456789,0123456789","type":"wuxing.zuxuan.zuxuan5","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":90},{"id":19,"ball":"02468,02468","type":"wuxing.zuxuan.zuxuan10","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":18,"ball":"13579,13579","type":"wuxing.zuxuan.zuxuan20","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":17,"ball":"01234,01234","type":"wuxing.zuxuan.zuxuan30","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":16,"ball":"56789,56789","type":"wuxing.zuxuan.zuxuan60","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":15,"ball":"5,6,7,8,9","type":"wuxing.zuxuan.zuxuan120","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":14,"ball":"56789","type":"wuxing.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":11,"ball":"01234,01234,01234,01234,01234","type":"wuxing.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":3125}],"orders":order_plan,"redDiscountAmount":0,"amount":21434*len_order}
         elif lottery in ['ahk3','jsk3']:
             data_ = {"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":9,"ball":"6","type":"yibutonghao.yibutonghao.yibutonghao","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":8,"ball":"2,4","type":"erbutonghao.biaozhun.biaozhuntouzhu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":7,"ball":"11#3","type":"ertonghaodanxuan.ertonghaodanxuan.ertonghaodanxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":6,"ball":"55*","type":"ertonghaofuxuan.ertonghaofuxuan.ertonghaofuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":5,"ball":"123 234 345 456","type":"sanlianhaotongxuan.sanlianhaotongxuan.sanlianhaotongxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":4,"ball":"1,2,6","type":"sanbutonghao.biaozhun.biaozhuntouzhu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":3,"ball":"111","type":"santonghaodanxuan.santonghaodanxuan.santonghaodanxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":2,"ball":"111 222 333 444 555 666","type":"santonghaotongxuan.santonghaotongxuan.santonghaotongxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":1,"ball":"14","type":"hezhi.hezhi.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan ,"amount":18*len_order}
         elif lottery in ['sd115','jx115','gd115','sl115']:
@@ -318,7 +314,8 @@ class FF_(): #4.0專案
         elif lottery == 'slmmc':
             data_ = {"gameType":"slmmc","isTrace":0,"traceWinStop":0,"traceStopValue":-1,"balls":[{"id":1,"ball":"9,9,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":1,"multiple":2222,"awardMode":2,"num":1}],"orders":[{"number":"/","issueCode":1,"multiple":1}],"amount":4444,"redDiscountAmount":0}
         elif lottery in ['llssc','jlffc','btcffc']:
-            data_ = {"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":85,"ball":"-,和,-,-,-,-,-,-,-,-","type":"longhu.longhudou.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":84,"ball":"双,大","type":"daxiaodanshuang.dxds.houer","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":83,"ball":"小","type":"daxiaodanshuang.dxds.houyi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":82,"ball":"大,单","type":"daxiaodanshuang.dxds.qianer","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":81,"ball":"大","type":"daxiaodanshuang.dxds.qianyi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":80,"ball":"双","type":"daxiaodanshuang.dxds.zonghe","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":79,"ball":"-,-,-,5,-","type":"yixing.dingweidan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":78,"ball":"5","type":"houer.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":77,"ball":"11","type":"houer.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":76,"ball":"46","type":"houer.zuxuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":75,"ball":"2,4","type":"houer.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":74,"ball":"3","type":"houer.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":14},{"id":73,"ball":"5","type":"houer.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":6},{"id":72,"ball":"49","type":"houer.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":71,"ball":"-,-,-,3,6","type":"houer.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":70,"ball":"7","type":"qianer.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":69,"ball":"8","type":"qianer.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":68,"ball":"27","type":"qianer.zuxuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":67,"ball":"1,6","type":"qianer.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":66,"ball":"4","type":"qianer.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":12},{"id":65,"ball":"8","type":"qianer.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":64,"ball":"31","type":"qianer.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":63,"ball":"3,5,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":62,"ball":"3,5","type":"housan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":61,"ball":"7","type":"housan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":60,"ball":"078","type":"housan.zuxuan.zuliudanshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":59,"ball":"577","type":"housan.zuxuan.zusandanshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":58,"ball":"9","type":"housan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":57,"ball":"125","type":"housan.zuxuan.hunhezuxuan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":56,"ball":"2,3,9","type":"housan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":55,"ball":"1,2","type":"housan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":2},{"id":54,"ball":"26","type":"housan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":53,"ball":"1","type":"housan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":52,"ball":"6","type":"housan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":28},{"id":51,"ball":"794","type":"housan.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":50,"ball":"-,-,0,3,8","type":"housan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":49,"ball":"5,8","type":"zhongsan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":48,"ball":"1","type":"zhongsan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":47,"ball":"025","type":"zhongsan.zuxuan.zuliudanshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":46,"ball":"338","type":"zhongsan.zuxuan.zusandanshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":45,"ball":"5","type":"zhongsan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":44,"ball":"149","type":"zhongsan.zuxuan.hunhezuxuan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":43,"ball":"4,5,7","type":"zhongsan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":42,"ball":"0,3","type":"zhongsan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":2},{"id":41,"ball":"14","type":"zhongsan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":40,"ball":"5","type":"zhongsan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":150},{"id":39,"ball":"15","type":"zhongsan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":73},{"id":38,"ball":"669","type":"zhongsan.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":37,"ball":"-,6,9,1,-","type":"zhongsan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":36,"ball":"0,9","type":"qiansan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":35,"ball":"3","type":"qiansan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":34,"ball":"147","type":"qiansan.zuxuan.zuliudanshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":33,"ball":"599","type":"qiansan.zuxuan.zusandanshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":32,"ball":"2","type":"qiansan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":31,"ball":"159","type":"qiansan.zuxuan.hunhezuxuan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":30,"ball":"0,5,7","type":"qiansan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":29,"ball":"2,3","type":"qiansan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":2},{"id":28,"ball":"14","type":"qiansan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":27,"ball":"4","type":"qiansan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":144},{"id":26,"ball":"2","type":"qiansan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":6},{"id":25,"ball":"582","type":"qiansan.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":24,"ball":"0,5,8,-,-","type":"qiansan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":23,"ball":"1,9","type":"sixing.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":22,"ball":"8","type":"sixing.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":21,"ball":"4,0","type":"sixing.zuxuan.zuxuan4","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":20,"ball":"4,5","type":"sixing.zuxuan.zuxuan6","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":19,"ball":"7,28","type":"sixing.zuxuan.zuxuan12","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":18,"ball":"1,2,5,9","type":"sixing.zuxuan.zuxuan24","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":17,"ball":"6266","type":"sixing.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":16,"ball":"-,9,4,6,4","type":"sixing.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":15,"ball":"6","type":"wuxing.quwei.sijifacai","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":14,"ball":"6","type":"wuxing.quwei.sanxingbaoxi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":13,"ball":"8","type":"wuxing.quwei.haoshichengshuang","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":12,"ball":"4","type":"wuxing.quwei.yifanfengshun","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":11,"ball":"0,3,7","type":"wuxing.budingwei.sanmabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":10,"ball":"5,8","type":"wuxing.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":9,"ball":"3","type":"wuxing.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":8,"ball":"2,7","type":"wuxing.zuxuan.zuxuan5","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":7,"ball":"0,4","type":"wuxing.zuxuan.zuxuan10","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":6,"ball":"4,79","type":"wuxing.zuxuan.zuxuan20","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":5,"ball":"01,3","type":"wuxing.zuxuan.zuxuan30","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":4,"ball":"4,078","type":"wuxing.zuxuan.zuxuan60","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":3,"ball":"1,2,5,6,8","type":"wuxing.zuxuan.zuxuan120","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":2,"ball":"74993","type":"wuxing.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":1,"ball":"9,9,6,4,8","type":"wuxing.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan ,"redDiscountAmount":0,"amount":1566*len_order}
+            data_ = {"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":97,"ball":"龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和,龙|虎|和","type":"longhu.longhudou.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":96,"ball":"大|小|单|双,大|小|单|双","type":"daxiaodanshuang.dxds.houer","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":16},{"id":95,"ball":"大|小|单|双","type":"daxiaodanshuang.dxds.houyi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":94,"ball":"大|小|单|双,大|小|单|双","type":"daxiaodanshuang.dxds.qianer","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":16},{"id":93,"ball":"大|小|单|双","type":"daxiaodanshuang.dxds.qianyi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":92,"ball":"大|小|单|双","type":"daxiaodanshuang.dxds.zonghe","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":75,"ball":"0123456789,0123456789,0123456789,0123456789,0123456789","type":"yixing.dingweidan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":50},{"id":74,"ball":"7","type":"houer.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":73,"ball":"15,16,17","type":"houer.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":4},{"id":72,"ball":"0,1,2,3,4,5,6,7,8,9","type":"houer.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":45},{"id":71,"ball":"0,1,2,3,4,5,6,7,8,9","type":"houer.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":70,"ball":"1,2,3,4,5,6","type":"houer.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":27},{"id":69,"ball":"-,-,-,0123456789,0123456789","type":"houer.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":68,"ball":"1","type":"qianer.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":9},{"id":67,"ball":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17","type":"qianer.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":45},{"id":66,"ball":"0,1,2,3,4,5,6,7,8,9","type":"qianer.zuxuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":45},{"id":65,"ball":"0,1,2,3,4,5,6,7,8,9","type":"qianer.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":100},{"id":64,"ball":"0,1,2,3,4","type":"qianer.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":63,"ball":"01234,01234,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":25},{"id":62,"ball":"0,1,2,3,4","type":"housan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":61,"ball":"5,6,7,8,9","type":"housan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":60,"ball":"8","type":"housan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":59,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":120},{"id":58,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":90},{"id":57,"ball":"9,10","type":"housan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":24},{"id":56,"ball":"0,1,2,3,4,5,6,7,8,9","type":"housan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1000},{"id":55,"ball":"14,15","type":"housan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":148},{"id":54,"ball":"-,-,01234,01234,01234","type":"housan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":125},{"id":53,"ball":"0,1,2,3,4","type":"zhongsan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":52,"ball":"5,6,7,8,9","type":"zhongsan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":51,"ball":"5","type":"zhongsan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":50,"ball":"0,1,2,3,4","type":"zhongsan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":49,"ball":"5,6,7,8,9","type":"zhongsan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":48,"ball":"13,14,15,16,17","type":"zhongsan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":71},{"id":47,"ball":"5,6,7,8,9","type":"zhongsan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":570},{"id":46,"ball":"0,1,19,20","type":"zhongsan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":85},{"id":45,"ball":"-,01234,01234,01234,-","type":"zhongsan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":125},{"id":44,"ball":"0,1,2,3,4","type":"qiansan.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":43,"ball":"5,6,7,8,9","type":"qiansan.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":42,"ball":"9","type":"qiansan.zuxuan.baodan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":54},{"id":41,"ball":"0,1,2,3,4","type":"qiansan.zuxuan.zuliu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":40,"ball":"5,6,7,8,9","type":"qiansan.zuxuan.zusan","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":39,"ball":"13","type":"qiansan.zuxuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":15},{"id":38,"ball":"5,6,7,8,9","type":"qiansan.zhixuan.kuadu","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":570},{"id":37,"ball":"27","type":"qiansan.zhixuan.hezhi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":36,"ball":"01234,01234,01234,-,-","type":"qiansan.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":125},{"id":35,"ball":"0,1,2,3,4","type":"sixing.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":34,"ball":"5,6,7,8,9","type":"sixing.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":33,"ball":"02468,02468","type":"sixing.zuxuan.zuxuan4","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":32,"ball":"1,3,5,7,9","type":"sixing.zuxuan.zuxuan6","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":31,"ball":"01234,01234","type":"sixing.zuxuan.zuxuan12","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":30,"ball":"5,6,7,8,9","type":"sixing.zuxuan.zuxuan24","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":29,"ball":"1234","type":"sixing.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":28,"ball":"-,01234,01234,01234,01234","type":"sixing.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":625},{"id":27,"ball":"0,2,4,6,8","type":"wuxing.quwei.sijifacai","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":26,"ball":"1,3,5,7,9","type":"wuxing.quwei.sanxingbaoxi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":25,"ball":"0,1,2,3,4","type":"wuxing.quwei.haoshichengshuang","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":24,"ball":"5,6,7,8,9","type":"wuxing.quwei.yifanfengshun","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":23,"ball":"0,2,4,6,8","type":"wuxing.budingwei.sanmabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":22,"ball":"0,1,2,3,4","type":"wuxing.budingwei.ermabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":10},{"id":21,"ball":"5,6,7,8,9","type":"wuxing.budingwei.yimabudingwei","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":5},{"id":20,"ball":"0123456789,0123456789","type":"wuxing.zuxuan.zuxuan5","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":90},{"id":19,"ball":"02468,02468","type":"wuxing.zuxuan.zuxuan10","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":18,"ball":"13579,13579","type":"wuxing.zuxuan.zuxuan20","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":17,"ball":"01234,01234","type":"wuxing.zuxuan.zuxuan30","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":30},{"id":16,"ball":"56789,56789","type":"wuxing.zuxuan.zuxuan60","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":20},{"id":15,"ball":"5,6,7,8,9","type":"wuxing.zuxuan.zuxuan120","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":14,"ball":"56789","type":"wuxing.zhixuan.danshi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":1},{"id":11,"ball":"01234,01234,01234,01234,01234","type":"wuxing.zhixuan.fushi","moneyunit":1,"multiple":1,"awardMode":awardmode,"num":3125}],"orders":order_plan,"redDiscountAmount":0,"amount":16104*len_order}
+
         elif lottery == 'txffc':
             data_ = {"gameType":lottery,"isTrace":isTrace,"traceWinStop":traceWinStop,"traceStopValue":traceStopValue,"balls":[{"id":85,"ball":"-,-,-,龙,-,-","type":"longhu.longhudou.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":84,"ball":"大,双","type":"daxiaodanshuang.dxds.houer","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":83,"ball":"单","type":"daxiaodanshuang.dxds.houyi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":82,"ball":"小","type":"daxiaodanshuang.dxds.houyi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":81,"ball":"双","type":"daxiaodanshuang.dxds.houyi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":80,"ball":"大","type":"daxiaodanshuang.dxds.houyi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":79,"ball":"-,-,-,-,1","type":"yixing.dingweidan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":78,"ball":"3","type":"houer.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":9},{"id":77,"ball":"17","type":"houer.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":76,"ball":"57","type":"houer.zuxuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":75,"ball":"6,9","type":"houer.zuxuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":74,"ball":"4","type":"houer.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":12},{"id":73,"ball":"1","type":"houer.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":72,"ball":"04","type":"houer.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":71,"ball":"-,-,-,2,2","type":"houer.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":70,"ball":"7","type":"qianer.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":9},{"id":69,"ball":"17","type":"qianer.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":68,"ball":"05","type":"qianer.zuxuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":67,"ball":"5,7","type":"qianer.zuxuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":66,"ball":"3","type":"qianer.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":14},{"id":65,"ball":"13","type":"qianer.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":6},{"id":64,"ball":"94","type":"qianer.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":63,"ball":"2,9,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":62,"ball":"0,9","type":"housan.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":61,"ball":"5","type":"housan.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":60,"ball":"346","type":"housan.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":59,"ball":"455","type":"housan.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":58,"ball":"2","type":"housan.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":57,"ball":"346","type":"housan.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":56,"ball":"1,4,7","type":"housan.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":55,"ball":"4,9","type":"housan.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":54,"ball":"2","type":"housan.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":53,"ball":"2","type":"housan.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":96},{"id":52,"ball":"1","type":"housan.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":3},{"id":51,"ball":"207","type":"housan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":50,"ball":"-,-,2,5,3","type":"housan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":49,"ball":"2,4","type":"zhongsan.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":48,"ball":"6","type":"zhongsan.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":47,"ball":"017","type":"zhongsan.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":46,"ball":"779","type":"zhongsan.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":45,"ball":"9","type":"zhongsan.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":44,"ball":"156","type":"zhongsan.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":43,"ball":"1,4,9","type":"zhongsan.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":42,"ball":"1,6","type":"zhongsan.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":41,"ball":"20","type":"zhongsan.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":8},{"id":40,"ball":"7","type":"zhongsan.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":126},{"id":39,"ball":"17","type":"zhongsan.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":63},{"id":38,"ball":"402","type":"zhongsan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":37,"ball":"-,5,2,4,-","type":"zhongsan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":36,"ball":"2,3","type":"qiansan.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":35,"ball":"3","type":"qiansan.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":34,"ball":"179","type":"qiansan.zuxuan.zuliudanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":33,"ball":"007","type":"qiansan.zuxuan.zusandanshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":32,"ball":"3","type":"qiansan.zuxuan.baodan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":54},{"id":31,"ball":"034","type":"qiansan.zuxuan.hunhezuxuan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":30,"ball":"3,4,5","type":"qiansan.zuxuan.zuliu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":29,"ball":"0,1","type":"qiansan.zuxuan.zusan","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":28,"ball":"3","type":"qiansan.zuxuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":2},{"id":27,"ball":"6","type":"qiansan.zhixuan.kuadu","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":144},{"id":26,"ball":"16","type":"qiansan.zhixuan.hezhi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":69},{"id":25,"ball":"338","type":"qiansan.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":24,"ball":"8,8,2,-,-","type":"qiansan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":23,"ball":"4,6","type":"sixing.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":22,"ball":"2","type":"sixing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":21,"ball":"5,0","type":"sixing.zuxuan.zuxuan4","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":20,"ball":"6,7","type":"sixing.zuxuan.zuxuan6","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":19,"ball":"9,04","type":"sixing.zuxuan.zuxuan12","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":18,"ball":"3,4,5,8","type":"sixing.zuxuan.zuxuan24","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":17,"ball":"8360","type":"sixing.zhixuan.danshi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":16,"ball":"-,8,8,3,4","type":"sixing.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":15,"ball":"6","type":"wuxing.quwei.sijifacai","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":14,"ball":"6","type":"wuxing.quwei.sanxingbaoxi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":13,"ball":"8","type":"wuxing.quwei.haoshichengshuang","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":12,"ball":"6","type":"wuxing.quwei.yifanfengshun","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":11,"ball":"3,4,8","type":"wuxing.budingwei.sanmabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":10,"ball":"3,7","type":"wuxing.budingwei.ermabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":9,"ball":"6","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":8,"ball":"3","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":7,"ball":"4","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":6,"ball":"2","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":5,"ball":"6","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":4,"ball":"1","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":3,"ball":"5","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":2,"ball":"0","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":1,"ball":"8","type":"wuxing.budingwei.yimabudingwei","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan ,"amount":1594*len_order}
         elif lottery == 'bjkl8':
@@ -340,20 +337,20 @@ class FF_(): #4.0專案
             "amount":str(50*len_order),"isTrace":isTrace,"traceWinStop":traceWinStop,
             "traceStopValue":traceStopValue}
         elif lottery == 'test':#測試用
-            data_ = {"gameType":"cqssc","isTrace":0,"traceWinStop":0,"traceStopValue":-1,
-            "balls":[{"id":1,"ball":"-,-,5,0,5","type":"housan.zhixuan.fushi","moneyunit":"1",
-            "multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan,"redDiscountAmount":0,
-            "amount":2*len_order}
-            
+            data_ = {"gameType":"jlffc","isTrace":0,"traceWinStop":0,"traceStopValue":-1,"balls":[{"id":8,"ball":"0123456789,0123456789,0123456789,0123456789,0123456789","type":"yixing.dingweidan.fushi","moneyunit":"1","multiple":222,"awardMode":awardmode,"num":50},{"id":7,"ball":"-,-,-,0123456789,0123456789","type":"houer.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":100},{"id":6,"ball":"9,9,-,-,-","type":"qianer.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":5,"ball":"-,-,9,9,9","type":"housan.zhixuan.fushi","moneyunit":"1","multiple":222,"awardMode":awardmode,"num":1},{"id":4,"ball":"-,0123456789,0123456789,0123456789,-","type":"zhongsan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1000},{"id":3,"ball":"0123456789,0123456789,0123456789,-,-","type":"qiansan.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1000},{"id":2,"ball":"-,9,9,9,9","type":"sixing.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1},{"id":1,"ball":"9,9,9,9,9","type":"wuxing.zhixuan.fushi","moneyunit":"1","multiple":1,"awardMode":awardmode,"num":1}],"orders":order_plan,"redDiscountAmount":0,"amount":"26850.00"}
         return data_
-    def Account_Cookie(self,user):# 用戶登入 的cookie 值
+    def Account_Cookie(self,user):# 該方法已經將用登入cookie傳進  ,回傳可是用header
         account_cookie  = FF_().cookies[user]#用戶登入的cookie
         Pc_header['Cookie'] =  'ANVOID='+ account_cookie# 在header增加用戶登入cookie
         return Pc_header
         
-    def Pc_Submit(self,user,lottery,awardmode,type_,stop="",ball=""):#PC投注
-        
+    def Pc_Submit(self,user,lottery,awardmode,type_,stop="",ball="",test_lottery=""):#PC投注
+        if lottery == 'test':# 代表 Lottery 是 帶 test. submit_josn 為test是用  測試data內容
+            submit_lottery = test_lottery
+        else:
+            submit_lottery  = lottery
         Pc_header =FF_().Account_Cookie(user)# 用戶 header 增加登入 
+        print(Pc_header )
         global issueCode# PC 和APP 投注共用 旗號參數
         #print(FF_().submit_inf)
         if type_ == 1:# 一般投注
@@ -370,25 +367,35 @@ class FF_(): #4.0專案
                 traceStopValue=-1
                 print('追中不停')
             isTrace=1
+        #try:
         if FF_().submit_inf == {}:# 初始化投注. 一定會呼叫奖期, 不燃會報錯
             print('要獎其')
-            issueCode = FF_().select_issue(FF_().get_conn(envs),lottery,type_)[lottery]# 奖期api , 為一個dict ,key為採種
+            issueCode = FF_().select_issue(FF_().get_conn(envs),submit_lottery,type_)[submit_lottery]# 奖期api , 為一個dict ,key為採種
             print(issueCode )
             #issueCode = FF_().submit_inf[lottery]# 這段 紀錄上個有抓到奖期的資訊
-        elif lottery not in FF_().submit_inf: # 裡面沒有  該彩種 ,救要一次
-            issueCode = FF_().select_issue(FF_().get_conn(envs),lottery,type_)[lottery]
+        elif submit_lottery not in FF_().submit_inf: # 裡面沒有  該彩種 ,救要一次
+            issueCode = FF_().select_issue(FF_().get_conn(envs),submit_lottery,type_)[submit_lottery]
         else:# 
-            issueCode = FF_().submit_inf[lottery]
+            issueCode = FF_().submit_inf[submit_lottery]
         postData = FF_().submit_json(lottery,awardmode,isTrace,traceWinStop ,traceStopValue,type_,ball)
-        FF_().session_post(em_url,'/gameBet/%s/submit'%lottery,json.dumps(postData),Pc_header)
-        print('%s投注,彩種: %s'%(user,self.lottery_dict[lottery][0]))
+        self.session_post(em_url,'/gameBet/%s/submit'%submit_lottery,json.dumps(postData),Pc_header)
+        '''
+        except KeyError:
+            issueCode = FF_().select_issue(FF_().get_conn(envs),test_lottery,type_)[test_lottery]
+            postData = FF_().submit_json('test',awardmode,isTrace,traceWinStop ,traceStopValue,type_,ball)
+            self.session_post(em_url,'/gameBet/%s/submit'%test_lottery,json.dumps(postData),Pc_header)
+            lottery = test_lottery
+            print(lottery)
+        '''
+        #postData = FF_().submit_json(lottery,awardmode,isTrace,traceWinStop ,traceStopValue,type_,ball)
+        print('%s投注,彩種: %s'%(user,self.lottery_dict[submit_lottery][0]))
         try:
             print( r.json()['isSuccess'])
         except:
             return 'wrong'
         #try: # 投注成功才會有  r.json()
         if r.json()['isSuccess'] == 1:# 頭住成功
-            FF_().submit_inf[lottery] = issueCode # 投注成功  ,紀錄 彩種: 奖期,避免一直要DB 奖期
+            FF_().submit_inf[submit_lottery] = issueCode # 投注成功  ,紀錄 彩種: 奖期,避免一直要DB 奖期
             print( FF_().submit_inf)
             print('投注成功 ,訂單id: %s'%(r.json()['data']['projectId']))
         else:#w投注失敗
@@ -397,16 +404,18 @@ class FF_(): #4.0專案
             elif "已截止销售" in r.json()['msg']:
                 for i in range(1,9):
                     print('已截止销售,第%s次 要獎期'%i)
-                    issueCode = FF_().select_issue(FF_().get_conn(envs),lottery,type_)[lottery]
+                    issueCode = FF_().select_issue(FF_().get_conn(envs),submit_lottery,type_)[submit_lottery]
                     sleep(3)
                     postData = FF_().submit_json(lottery,awardmode,isTrace,traceWinStop ,traceStopValue,type_,ball)
                     print(issueCode)
-                    FF_().session_post(em_url,'/gameBet/%s/submit'%lottery,json.dumps(postData),Pc_header)
+                    FF_().session_post(em_url,'/gameBet/%s/submit'%submit_lottery,json.dumps(postData),Pc_header)
                     if r.json()['isSuccess'] == 1:
-                        FF_().submit_inf[lottery] = issueCode
+                        FF_().submit_inf[submit_lottery] = issueCode
+                        print('投注成功 ,訂單id: %s'%(r.json()['data']['projectId']))
                         return('投注成功')
             elif '超出倍数限制' in r.json()['msg']:
                 return '超出倍数限制'
+        
 
     def Third_Home(self):# 第三方連線
         Pc_header =FF_().Account_Cookie()
@@ -484,7 +493,7 @@ class App(FF_):
             print('投注失敗,待確認')
 
 
-# In[ ]:
+# In[58]:
 
 
 FF_().select_lottery(FF_().get_conn(0))
@@ -496,32 +505,26 @@ FF_().select_lottery(FF_().get_conn(0))
 FF_().lottery_dict
 
 
-# In[ ]:
-
-
-FF_().web_issuecode(lottery='cqssc',account='kerr001')
-
-
-# In[ ]:
+# In[68]:
 
 
 FF_().cookies
 
 
-# In[ ]:
+# In[62]:
 
 
-print(test_user)
+post_url
 
 
-# In[ ]:
+# In[396]:
 
 
-#for user in test_user:
-FF_().Pc_Login(url='joy188',user='kerr000')#登入接口, url: 環境 , user: 用戶, source: 登入莊置(不帶: 預設PC)
+for i in range(2):
+    FF_().Pc_Login(url='dev02',user='hsieh{:03d}'.format(i))#登入接口, url: 環境 , user: 用戶, source: 登入莊置(不帶: 預設PC)
 
 
-# In[ ]:
+# In[317]:
 
 
 FF_().submit_inf
@@ -533,25 +536,27 @@ FF_().submit_inf
 FF_().lottery_dict
 
 
-# In[ ]:
+# In[389]:
 
 
-#for user in FF_().cookies.keys():
-for i in range(30):
-    FF_().Pc_Submit(lottery = 'slmmc',awardmode=None,type_=1,user='kerr000')
+for user in FF_().cookies.keys():
+    FF_().Pc_Submit(lottery = 'test',awardmode=None,type_=1,user=user,test_lottery= 'jlffc')
 
 
-# In[ ]:
+# In[398]:
 
 
+for lottery in ['cqssc','btcffc','txffc','tjssc','hljssc','fhjlssc','llssc','jlffc','360ffc']:
+    for user in FF_().cookies.keys():
+#for i in range(30):
+        FF_().Pc_Submit(lottery = lottery,awardmode=2,type_=1,user=user)
 
 
+# In[253]:
 
-# In[ ]:
 
-
-for lottery_name in FF_().lottery_dict:
-    FF_().Pc_Submit(lottery = lottery_name,awardmode=None,type_=1,user='kerr001')
+#for lottery_name in FF_().lottery_dict:
+FF_().Pc_Submit(lottery = 'cqssc',awardmode=None,type_=1,user='hsieh001')
 
 
 # In[ ]:
@@ -719,7 +724,7 @@ token_time = time.localtime(int(timestap))
 print(timestap,token_time)
 
 
-# In[ ]:
+# In[477]:
 
 
 from requests_toolbelt import MultipartEncoder
@@ -762,7 +767,8 @@ class GameBox(FF_):
         {"11":{"agentLogin": "xosouat","member": {"username": username}}},
         {"12":{"member": {"username": username}}},
         {"13":{"member": {"username": username}}},
-        {"14":{"ipAddress": "61.220.138.45","member": {"amount": amount,"username": username }}}]
+        {"14":{"ipAddress": "61.220.138.45","member": {"amount": amount,"username": username }}},
+        {"15":{"birthDate": "1994-07-01","country": "china","email": "%s@asd.com"%username,"lang": "cs","member": {"username": username}}}]
         ],
         "login":["客戶/登入",
         "/api/member/login?agent_name=%s"%clientId,[
@@ -781,7 +787,8 @@ class GameBox(FF_):
         {"11":{"lang":"cs","member": {"username": username}}},
         {"12":{"lang":"cs","member": {"username": username}}},
         {"13":{"member": {"username": username}}},
-        {"14":{"ipAddress": "61.220.138.45","member": {"amount": amount,"username": username }}}]
+        {"14":{"ipAddress": "61.220.138.45","member": {"amount": amount,"username": username }}},
+        {"15":{"deviceId": "1","member": {"username": username}}}]
         ],
         "freeLogin":["客戶/試玩登入",
         "/api/member/freeLogin?agent_name=%s"%clientId,[
@@ -791,7 +798,7 @@ class GameBox(FF_):
         {"7":{"deviceId": "4","lang":"cs","backUrl":"http:///www.baidu.com"}},
         {"8":{}},{"9":{}},{"10":{}},
         {"11":{"lang": "cs"}},
-        {"12":{}},{"13":{}},{"14":{}}]
+        {"12":{}},{"13":{}},{"14":{}},{"15":{}}]
         ],
         "update":["客戶/修改会员信息","/api/member/update?agent_name=%s"%clientId,[
         {"0":{"member": {"status": 1, "winLimit": 0,"password": password, "username":username }}}, 
@@ -806,7 +813,8 @@ class GameBox(FF_):
         {"11":{}},
         {"12":{}},
         {"13":{}},
-        {"14":{}}]
+        {"14":{}},
+        {"15":{}}]
         ],
         "balance":['客戶/获取会员余额接口',
         "/api/member/balance?agent_name=%s"%clientId,[
@@ -824,7 +832,8 @@ class GameBox(FF_):
         {"11":{"agentLogin": "xosouat","member": {"username": username}}},
         {"12":{"member": {"username": username}}},
         {"13":{"member": {"username": username,}}},
-        {"14":{"member": {"username": username,}}}]
+        {"14":{"member": {"username": username,}}},
+        {"15":{"member": {"username": username,}}}]
         ],
         "transfer":["客戶/会员存取款接口",
         "/api/member/transfer?agent_name=%s"%clientId,[
@@ -842,7 +851,8 @@ class GameBox(FF_):
         {"11":{"billNo": '%s'%random.randint(1,1000000000),"agentLogin": "xosouat","member": {"amount":amount,"username": username}}},
         {"12":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
         {"13":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
-        {"14":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}}]
+        {"14":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
+        {"15":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}}]
         ],
         "checkTransfer":["客戶/检查存取款操作是否成功",
         "/api/member/checkTransfer?agent_name=%s"%clientId,[
@@ -858,14 +868,15 @@ class GameBox(FF_):
         {"11":{"billNo":bill_No,"agentLogin":"xosouat"}},
         {"12":{"billNo": bill_No}},
         {"13":{}},
-        {"14":{"billNo": bill_No,"member": {"username": username}}}]
+        {"14":{"billNo": bill_No,"member": {"username": username}}},
+        {"15":{"billNo": bill_No,"member": {"username": username}}}]
         ],
         "updateLimit":['客戶/修改会员限红组',
         "/api/member/updateLimit?agent_name=%s"%clientId,[
         {"0":{"member": {"username": username},"oddType": "A"}},
         {"1":{}},
         {"2":{"member": {"username": "testsz8"},"oddType": "260301"}},
-        {"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}]
+        {"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}}]
         ],
         "checkOnline":["客戶/查询玩家在线状态",
         "/api/member/checkOnline?agent_name=%s"%clientId,[
@@ -874,10 +885,11 @@ class GameBox(FF_):
         {"2":{}},
         {"3":{"member": {"username": username}}},
         {"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},
-        {"14":{"member": {"username": username}}}]
+        {"14":{"member": {"username": username}}},{"15":{}}]
         ],
         "onlineCount":['客戶/查询在线玩家数量','/api/member/onlineCount?agent_name=%s'%clientId,[
-        {"0":{}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}]
+        {"0":{}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}
+        ,{"15":{}}]
         ],
         "offline":['客戶/踢人','/api/member/offline?agent_name=%s'%clientId,[
         {"0":{"member": {"memberId":member_Id}}},
@@ -892,7 +904,8 @@ class GameBox(FF_):
         {"11":{"agentLogin": "xosouat","member": {"username": username}}},
         {"12":{}},
         {"13":{}},
-        {"14":{"member": {"username": username}}}]
+        {"14":{"member": {"username": username}}},
+        {"15":{}}]
         ],
         "lockMember":['客戶/封鎖會員','/api/member/lockMember?agent_name=%s'%clientId,[
         {"0":{"member": {"password":password,"username": username}}},
@@ -902,7 +915,7 @@ class GameBox(FF_):
         {"6":{}},
         {"7":{"agentLogin": "amberdev","member": {"username": username}}},
         {"8":{"member": {"username": username}}},
-        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}]
+        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}}]
         ],
         "unlockMember":['客戶/解封鎖會員','/api/member/unlockMember?agent_name=%s'%clientId,[
         {"0":{"member": {"password":password,"username": username}}},
@@ -912,10 +925,11 @@ class GameBox(FF_):
         {"6":{}},
         {"7":{"agentLogin": "amberdev","member": {"username": username}}},
         {"8":{"member": {"username": username}}},
-        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}]
+        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}}]
         ],
         "onlineMember":['客戶/查询在线玩家','/api/member/onlineMember?agent_name=%s&page=1&size=100'%clientId,
-        [{"0":{}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}]
+        [{"0":{}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},
+            {"15":{}}]
         ],  
         "supplierGameFile":['上传三方游戏列表','/admin/config/supplierGameFile']
         }
@@ -1026,7 +1040,7 @@ class GameBox(FF_):
                     url_content = data_[1]
                 if client_env == 3:# cq_9 url 後面參數  需用寫死  cq_9Key  
                     url_content = url_content.replace(clientId,cq_9Key)
-                elif client_env == 2:# sexy的 agent_name 用 ambertest .不是client_id 
+                elif client_env == 2:# 沙巴的 agent_name 用 ambertest .不是client_id 
                     url_content = url_content.replace(clientId,"ambertest")
                 else:
                     pass
@@ -1055,7 +1069,7 @@ class GameBox(FF_):
             elif type_ == 'login':
                 pc_url = r_json['data']['pc']# 拿來 checkOnline  要先登入,才能  獲得memberId   
             elif type_ == 'transfer':
-                if client_env in [3,4,5,7,8,9,10,11,12]:# cq_9,gpi,YB,pg response不會回傳  billNo , 需自己帶
+                if client_env in [3,4,5,7,8,9,10,11,12,15]:# cq_9,gpi,YB,pg response不會回傳  billNo , 需自己帶
                     billNo = data["billNo"]
                 else:
                     billNo = r_json['data']['billNo']
@@ -1097,10 +1111,10 @@ class GameBox(FF_):
                 FF_().session_post(url,url_content,'',test_header) 
                 access_token = r.json()['access_token']
                 token_type = r.json()['token_type']
+                print(r.text)
 
 
-
-update_type  = 0# 0 : 刪除 . 1: 修改 ,updateSupplierAccount  更改管理端 client_id 用
+update_type  = 1# 0 : 刪除 . 1: 修改 ,updateSupplierAccount  更改管理端 client_id 用
 url_dict = {0:'http://103.242.101.102:21080',1:'http://54.248.18.149:8203'}# 測試 / 灰度
 #cq_9 的  key叫特別
 cq_9Key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI1ZjU5OWU3NTc4MDdhYTAwMDFlYTFjMjYiLCJhY2NvdW50IjoiYW1iZXJ1YXQiLCJvd25lciI6IjVkYzExN2JjM2ViM2IzMDAwMTA4ZTQ4NyIsInBhcmVudCI6IjVkYzExN2JjM2ViM2IzMDAwMTA4ZTQ4NyIsImN1cnJlbmN5IjoiVk5EIiwianRpIjoiNzkyMjU1MDIzIiwiaWF0IjoxNTk5NzA4Nzg5LCJpc3MiOiJDeXByZXNzIiwic3ViIjoiU1NUb2tlbiJ9.cyvPJaWFGwhX4dZV7fwcwgUhGM9d5dVv8sgyctlRijc"
@@ -1113,7 +1127,7 @@ client_type = {
 2ec4dd42b3f2b82687999588fab2722814c62f650f98a588e8f372cb377b4e62302dc4addfdaa3e95cc48cfa9\
 e308e3285e0eb54781b0ab29c2a95d544c64847c216c2f2b10a9e083de4506b0a901dac71651be86e680f5\
 f61c4a2fb1fbccaa56ce9d88715a8c",9:"",10:"DF0FAEB6171BDEF9",11:"fe9b68fca25f2fe2",12:"dbettest",
-13: "89CA25C2BA65AC9DD12E04BD66B6B467",14: "FB9EFF5983F0683F"},
+13: "89CA25C2BA65AC9DD12E04BD66B6B467",14: "FB9EFF5983F0683F",15:"2RuIYUKYkWrWBnNG"},
 "api_url":
     {0: "https://api.dg99web.com",1:"http://tsa.l0044.xtu168.com",
 2:"https://testapi.onlinegames22.com",3:"http://api.cqgame.games",4:"http://gsmd.336699bet.com",
@@ -1121,22 +1135,22 @@ f61c4a2fb1fbccaa56ce9d88715a8c",9:"",10:"DF0FAEB6171BDEF9",11:"fe9b68fca25f2fe2"
 7:'http://am.bgvip55.com/open-cloud/api/',8:"https://spi-test.r4espt.com",
 9:"http://operatorapi.staging.imaegisapi.com",10:'https://api.cp888.cloud',11:"http://api.jygrq.com",
 12:"https://linkapi.bbinauth.net/app/WebService/JSON/display.php",13:"https://api.0x666666.com",
-14: "https://wc-api.hddv1.com/channelHandle"},
+14: "https://wc-api.hddv1.com/channelHandle",15:"https://marsapi-test.oriental-game.com:8443"},
 "supplier_type":
     {0:"dream_game",1:"sa_ba_sports",2: "ae_sexy",3:"cq_9",4:"gpi",5:"ya_bo_live",6:"pg_game",
 7:{"game":"bg_game","fish":'bg_fishing','chess':'bg_chess','lottery':'bg_lottery'},
 8:"tf_gaming",9:"im_sb",10: "ya_bo_lottery",11: "jdb_electronic",
-12: "bb_in",13:"yx_game",14: "ky_chess"},
+12: "bb_in",13:"yx_game",14: "ky_chess",15: "og_live"},
 "supplier_user":
 {0: "DGTE01011T",1: "6yayl95mkn",2: "fhlmag",3: "cq9_test",4: "xo8v",5: "ZSCH5",
  6: "aba4d198602ba6f2a3a604edcebd08f1",7:"am00",8:"711",9:"OPRikJXEbbH36LAphfbD5RXcum6qifl8",
- 10:"fhagen",11:"XT",12: "test",13: "FH",14: "72298"}# DB 裡 client_id
+ 10:"fhagen",11:"XT",12: "test",13: "FH",14: "72298",15: "mog251sy"}# DB 裡 client_id
 }
 
-env = 0# 環境變數  0 測試區 或1 灰度
+env = 1# 環境變數  0 測試區 或1 灰度
 # 0 : DG , 1: 沙巴 ,2: sexy, 3 : cq9 , 4: gpi,5: YB,6: PG, 7:bg ,8: tfGaming,9: imSb ,10: ya_bo_lottery
-#11: JDB , 12: bbin 13: yx_game ,14: ky
-client_env = 11
+#11: JDB , 12: bbin 13: yx_game ,14: ky , 15 : og真人
+client_env = 8
 
 clientId = client_type["supplier_user"][client_env]# agent_name 商戶 ,gamebox預設 : DGTE01011T , 沙巴: 
 client_detail = GameBox.GameBox_Con(clientId,env)# 登入DB , 是 寫死 cq9_test ,
@@ -1147,9 +1161,9 @@ supplier_user = client_type["supplier_user"][client_env]
 #for i in range(1):# http://43.240.38.15:21080  , http://54.248.18.149:82030
 bg_type = 'fish' #['game','fish','chess','lottery']
 
-GameBox.GameBox_test(type_= 'login',clientId=clientId,username='kerr483ss2',
-client_detail=client_detail,password='123qwe',url=url_dict[env],amount="100",
-                     filename='gameList',supplier_index=1)
+GameBox.GameBox_test(type_= 'signUp',clientId=clientId,username='hsiesdsdh01',
+client_detail=client_detail,password='123qwe',url=url_dict[env],amount="100.45",
+                     filename='gameList',supplier_index=0)
 
 
 #(['token', 'createApp', 'updateIpWhitelist', 'updateSupplierAccount', getClientInfo
@@ -1158,13 +1172,22 @@ client_detail=client_detail,password='123qwe',url=url_dict[env],amount="100",
 #supplierGameFile]):ii
 
 
-# In[ ]:
+# In[85]:
+
+
+for client_env in range(15):
+    GameBox.GameBox_test(type_= 'login',clientId=clientId,username='kerr483ss2',
+    client_detail=client_detail,password='123qwe',url=url_dict[env],amount="100",
+                         filename='gameList',supplier_index=1)
+
+
+# In[340]:
 
 
 threads = []
 for i in range(2):
-    t = threading.Thread(target=GameBox.GameBox_test,args=('transfer',clientId,'hsieh0sdsdsd01',
-     client_detail,'123qwe',url_dict[env],'-10'))
+    t = threading.Thread(target=GameBox.GameBox_test,args=('transfer',clientId,'gray_hsieh01',
+     client_detail,'123qwe',url_dict[env],'-115', 'gameList',1))
 
     threads.append(t)
 
@@ -1174,7 +1197,14 @@ for i in threads:
     i.join()
 
 
-# In[ ]:
+# In[429]:
+
+
+a ={'HB,AHBC,null,1':"红包收入"}
+tuple(a.keys())
+
+
+# In[334]:
 
 
 
@@ -1279,9 +1309,9 @@ class GameBoxTest_User(GameBoxTest_Admin):
 
 # 0 : gamebox , 1: 沙巴 ,2: sexy, 3 : cq9 , 4: gpi,5: YB,6: PG, 7:bg ,8: tfGaming,9: imSb ,10: ya_bo_lottery
 #11: JDB  12: bbin 13: yx_game
-client_env = 7
-env = 0# 0為 43 測試 , 1 為 54 灰度   
-supplier_list = [1]
+client_env = 15
+env = 1# 0為 43 測試 , 1 為 54 灰度   
+supplier_list = [0,1]
 bg_type = 'lottery' #['game','fish','chess','lottery']
 url_dict = {0:['http://103.242.101.102:21080','測試區'],1:['http://54.248.18.149:8203','灰度']}# 測試 / 灰度
 
@@ -1342,12 +1372,6 @@ fp.close()
 runner = unittest.TextTestRunner(verbosity=2)
 runner.run(suite)
 '''
-
-
-# In[ ]:
-
-
-bet_type
 
 
 # In[ ]:
@@ -1755,7 +1779,7 @@ test = round(a[0],2)
 print(type(test))
 
 
-# In[ ]:
+# In[420]:
 
 
 def admin_Login(url):
@@ -1806,14 +1830,14 @@ def admin_Login(url):
     print(r.text)
     
     
-admin_Login('dev02')
+admin_Login('joy188')
 
 
-# In[ ]:
+# In[430]:
 
 
-select_fundID(get_conn(envs),'hsieh001')
-fund_id
+a = {'GM,DVCB,null,2':"投注扣款",'GM,DVCN,null,2':"追号投注扣款",'GM,PDXX,null,3':"奖金派送",'GM,BDRX,null,1':"撤销派奖",'OT,RBAP,null,3':"加币-补发奖金",'OT,BDBA,null,3':"扣币-中奖减项",'HB,DHBS,null,2':"红包抵扣"}
+tuple(a.keys())
 
 
 # In[ ]:
@@ -1822,7 +1846,7 @@ fund_id
 select_userid(get_conn(1),'kerr001')
 
 
-# In[ ]:
+# In[255]:
 
 
 
@@ -1862,19 +1886,13 @@ def admin_benefit(id_,sum_):
 # In[ ]:
 
 
-admin_benefit(5441,153318000)
-
-
-# In[ ]:
-
-
 FF_().Pc_Submit(lottery = 'slmmc',awardmode=None,type_=1,user='kerr000')
 
 
-# In[ ]:
+# In[421]:
 
 
-for user in ['hsieh000']:
+for user in ['kerr001']:
     for i in range(1,61):
         add_activity(user,i,str(i)) #後台創建 人工資金名細
     activity_confirm(user)
@@ -2280,7 +2298,7 @@ for i in record.keys():
 print(record_list)
 
 
-# In[ ]:
+# In[28]:
 
 
 
@@ -2518,10 +2536,10 @@ def select_userUrl(conn,userid):
 select_test_user(get_conn(1),lottery='',account='kerr000')
 
 
-# In[ ]:
+# In[26]:
 
 
-FF_().Pc_Login(url='dev02',user='hsieh000')
+FF_().Pc_Login(url='joy188.195353',user='kerrwin000')
 
 
 # In[ ]:
@@ -2530,10 +2548,10 @@ FF_().Pc_Login(url='dev02',user='hsieh000')
 FF_().Account_Cookie('kerrwin000')
 
 
-# In[ ]:
+# In[30]:
 
 
-test_user = select_test_user(get_conn(0),lottery='',account='hsieh000')[0:100]
+test_user = select_test_user(get_conn(1),lottery='',account='kerrwin000')[0:100]
 print(len(test_user))
 
 
