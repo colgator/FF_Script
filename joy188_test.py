@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 #-*- coding: utf-8 -*-
@@ -20,7 +20,7 @@ import threading
 from collections import defaultdict
 
 
-# In[184]:
+# In[ ]:
 
 
 fake = Factory.create()
@@ -29,7 +29,13 @@ card = (fake.credit_card_number(card_type='visa16'))#產生一個16位的假卡�
 print(card)
 
 
-# In[151]:
+# In[ ]:
+
+
+
+
+
+# In[ ]:
 
 
 
@@ -60,11 +66,12 @@ third_list = ['gns','shaba','im','ky','lc','city','bg','yb','pg']
 cancel_lottery_list = ['cqssc','xjssc','tjssc','hljssc','fhjlssc','xyft','pk10','fc3d',
                  'p5','n3d','np3']# 撤消彩種
 env_dict = {
-    '測試總代': ['hsieh00','kerr00'] ,'一般帳號': ['hsieh001','kerr001'],
+    '測試總代': ['hsieh000','kerr000'] ,'一般帳號': ['hsieh001','kerr001'],
     '合營1940': ['hsiehwin1940test','kerrwin1940test'],
     '轉入/轉出':['hsiehthird001','kerrthird001'],
     'APP帳號': ['hsiehapp001','kerrapp001'],
-    '玩家':['hsieh0620','kerr010']
+    '玩家':['hsieh0620','kerr010'],
+    'APP合營': ['hsiehwin','kerrwin1940' ]
 }
 
 class Joy188Test(unittest.TestCase):
@@ -259,8 +266,15 @@ class Joy188Test(unittest.TestCase):
             for i in rows:
                 lockid.append(i[0])
             return lockid
-    
-    
+    @staticmethod
+    def select_GroupId(conn,lotteryid,account):#查詢用戶 該彩種的 groupid, APP追號 需要用該參數
+        with conn.cursor() as cursor:
+            sql = "select sys_award_group_id from user_customer uc inner join             game_award_user_group game             on uc.id = game.userid             where game.lotteryid = %s and uc.account = '%s' and game.bet_type = 1"%(lotteryid,account)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            for i in rows:
+                return i[0]
+            conn.close()
     @staticmethod
     def select_betTypeCode(conn,lotteryid,game_type):#從game_type 去對應玩法的數字,給app投注使用
         with conn.cursor() as cursor:
@@ -288,9 +302,13 @@ class Joy188Test(unittest.TestCase):
                 order_code.append(i[0])
         conn.close()
     @staticmethod
-    def select_PlanCode(conn,lotteryid,account):#找追號單號
+    def select_PlanCode(conn,lotteryid='',account='',type_='Pc',planid=''):#找追號單號
         with conn.cursor() as cursor:
-            sql = f"select game_plan.plan_code from game_package  inner join game_plan "            f"on game_package.id = game_plan.PACKAGE_ID "            f"where game_package.userid = (select id from user_customer "            f"where account = '{account}') and game_package.LOTTERYID = {lotteryid} "            f"and game_package.sale_time > to_date(trunc(sysdate,'DD')) "            f"order by game_package.sale_time desc "
+            if type_ == 'Pc':
+                sql = f"select game_plan.plan_code from game_package  inner join game_plan "                f"on game_package.id = game_plan.PACKAGE_ID "                f"where game_package.userid = (select id from user_customer "                f"where account = '{account}') and game_package.LOTTERYID = {lotteryid} "                f"and game_package.sale_time > to_date(trunc(sysdate,'DD')) "                f"order by game_package.sale_time desc "
+            else:# APP ,用 planid 直接找出來  單號
+                sql = "select plan_code from GAME_PLAN where id = %s"%planid
+                
             #print(sql)
             cursor.execute(sql)
             rows = cursor.fetchall()
@@ -341,16 +359,20 @@ class Joy188Test(unittest.TestCase):
         conn.close()
     @staticmethod
     #查詢轉移用戶 , usr_lvl : 代理等級 , top_account 總代
-    def select_tranUser(conn,joint='0',type_=""):
+    def select_tranUser(conn,joint=0,type_=""):
+        global new_user
         account_tran = {
-            0:['%hsieh%','hsieh001','hsieh00'],
-            1:['%kerr%','kerr000','kerr00']
+            0:[['%hsieh%','hsieh001','hsieh00'],['%hsiehwin%','hsiehwin','hsiehwinnew']],
+            1:[['%kerr%','kerr000','kerr00'],['%kerrwin%','kerrwin1940','kerrnewwin']]
         }
+        new_user = account_tran[envs][joint][2] # 轉移後的新總待
         with conn.cursor() as cursor:
             if type_ == "":# 預設 
-                sql = "select account,user_chain from user_customer where account like  '%s'                 and joint_venture = %s and parent_id = (select id from user_customer where                 account='%s')                 order by register_date desc"%(account_tran[envs][0],joint,account_tran[envs][1])
+                sql = "select account,user_chain from user_customer where account like  '%s'                 and joint_venture = %s and parent_id = (select id from user_customer where                 account='%s')                 order by register_date desc"%(account_tran[envs][joint][0]
+                                              ,joint,account_tran[envs][joint][1])
             else:#  帶 type_ 不等於 "" . 用意 找出  指定一代 ,上級 為kerr00 
-                sql = "select account,user_chain from user_customer where account like  '%s'                 and joint_venture = %s and parent_id = (select id from user_customer where                 account = '%s')                 order by register_date desc"%(account_tran[envs][0],joint,account_tran[envs][2])
+                sql = "select account,user_chain from user_customer where account like  '%s'                 and joint_venture = %s and parent_id = (select id from user_customer where                 account = '%s')                 order by register_date desc"%(account_tran[envs][joint][0],joint,
+                                              new_user)
             #print(sql)
             cursor.execute(sql)
             rows = cursor.fetchall()
@@ -678,8 +700,8 @@ class Joy188Test(unittest.TestCase):
                 if plan > 1:# 追號
 
                     print(u'追號, 期數:%s'%plan)
-                    plan_code = Joy188Test.select_PlanCode(Joy188Test.get_conn(envs),
-                                lottery_dict[lottery][1],account)
+                    plan_code = Joy188Test.select_PlanCode(conn=Joy188Test.get_conn(envs),
+                                lotteryid=lottery_dict[lottery][1],account=account)
                     content_ = (lottery_name+"\n"+u'追號單號: '+plan_code+"\n"
                                 +mul_+ "\n" 
                                 +play_+"\n"+u"投注金額: "+ str(float(submit_amount*0.0001*plan))+"\n"
@@ -1018,29 +1040,30 @@ class Joy188Test(unittest.TestCase):
                 target = user_chain[0].split('/')[1]# 此為  抓出來的總帶,  需找出  是這個用戶的總代
                 print('三代: %s用戶,轉移至一代,相同總代為: %s'%(user,target))
             elif move_type == 3:#代理線轉移, 隨意跨線 ,可以是 同條線 ,也可以是 別條線
-                move_type = 'lca'
-                random_lvl = random.randint(2,10) # 隨意等級 ,2 -6 
-                Joy188Test.select_tranUser(conn=Joy188Test.get_conn(envs) )#抓一個
-                user = tran_user[0]#要做的用戶
-                Joy188Test.select_tranUser(conn=Joy188Test.get_conn(envs),type_='t')#
+                for i in range(2):# 0 和 1  也能用來 joint_venture
+                    move_type = 'lca'
+                    random_lvl = random.randint(2,10) # 隨意等級 ,2 -6 
+                    Joy188Test.select_tranUser(conn=Joy188Test.get_conn(envs),joint=i )#一般抓一個
+                    user = tran_user[0]#要做的用戶
+                    #Joy188Test.select_tranUser(conn=Joy188Test.get_conn(envs),joint=i,type_='t')#一般
+                    if i == 0:
+                        print('一般用戶轉移')
+                    else:
+                        print('合營用戶轉移')
+                        sleep(5)
+                    print('%s用戶,做代理線移轉 ,新上級代理: %s'%(user,
+                                                         new_user))
+                    admin_header['Content-Type'] = "application/x-www-form-urlencoded; charset=UTF-8"
+                    data = 'moveAccount=%s&targetAccount=%s&moveType=%s'%(user, new_user,move_type)# 要做轉移的用戶,目標用戶 ,類型 
+                    r = admin_session.post(admin_url+'/admin/user/userchaincreate',headers=admin_header,
+                                           data=data)
+                    if 'errorMsg' in r.text:
+                        print('代理線需確認')
+                    else:
+                        print('轉移成功')
+                    print('----------------')
 
-                target = tran_user[0]#要做的用戶
-                print('%s用戶,做代理線移轉 ,新上級代理: %s, 新總代: %s'%(user, target,
-                                                     env_dict['測試總代'][envs]))
-            
-            
-            admin_header['Content-Type'] = "application/x-www-form-urlencoded; charset=UTF-8"
-            data = 'moveAccount=%s&targetAccount=%s&moveType=%s'%(user,target,move_type)# 要做轉移的用戶,目標用戶 ,類型 
-            r = admin_session.post(admin_url+'/admin/user/userchaincreate',headers=admin_header,
-                                   data=data)
-
-            #print(r.json())
-            #print(r.json()['status'])
-            if 'errorMsg' in r.text:
-                print('代理線需確認')
-            else:
-                print('轉移成功')
-            print('----------------')
+                
     @staticmethod
     def test_redEnvelope():#紅包加壁,審核用
         '''紅包測試'''
@@ -1121,7 +1144,7 @@ class Joy188Test(unittest.TestCase):
 
 
 
-# In[3]:
+# In[ ]:
 
 
 class Joy188Test2(unittest.TestCase):
@@ -1682,7 +1705,7 @@ class Joy188Test2(unittest.TestCase):
         OpenUrl_dict = {
             0: "/register?id=18417062&exp=1902283553071&pid=13412941&token=e618",
             1: "/register/?id=27402734&exp=1885877796573&pid=13732231&token=3738"
-        }
+        }# list[0] : 一般用戶 , list[1] : 合營用戶
         dr.get(post_url+OpenUrl_dict[envs])#kerr000的連結
         print(dr.title)
         global user_random
@@ -1773,18 +1796,18 @@ class Joy188Test2(unittest.TestCase):
         cls.dr.quit()
 
 
-# In[168]:
+# In[ ]:
 
 
 
 
 
-# In[175]:
+# In[ ]:
 
 
 class Joy188Test3(unittest.TestCase):
     u'trunkAPP接口測試'
-    def Iapi_LoginData(username,uuid_,passwd ):
+    def Iapi_LoginData(username,uuid_,passwd,joint= 0 ):
         login_data = {
             "head": {
                 "sessionId": ''
@@ -1799,7 +1822,8 @@ class Joy188Test3(unittest.TestCase):
                 "device": 2,
                 "app_id": 9,
                 "come_from": "3",
-                "appname": "1"
+                "appname": "1",
+                "jointVenture": joint
             }
             }
             }
@@ -1808,8 +1832,10 @@ class Joy188Test3(unittest.TestCase):
     @staticmethod
     def test_iapiLogin():
         '''APP登入測試'''
-        account_ ={0: {'hsieh00':'總代','hsieh001':'一代','hsiehapp001':'一代','hsieh0620':'玩家'} 
-                   ,1:{'kerr00':u'總代','kerr001':u'一代','kerrapp001':'二代','kerr010':'玩家'}
+        account_ ={0: {'hsieh00':'總代','hsieh001':'一代','hsiehapp001':'一代','hsieh0620':'玩家',
+                      'hsiehwin':'合營1940'} 
+                   ,1:{'kerr00':u'總代','kerr001':u'一代','kerrapp001':'二代','kerr010':'玩家',
+                      'kerrwin1940': '合營1940'}
                   }
         global token_,userid_,loginpasssource,uuid
         token_  ={}
@@ -1823,7 +1849,6 @@ class Joy188Test3(unittest.TestCase):
         
         #判斷用戶是dev或188,  uuid和loginpasssource為固定值
         global env# ipai環境
-        env_dict = {0:'dev',1:'188'}
         if envs == 0:
             env = 'http://10.13.22.152:8199/'
             uuid = "2D424FA3-D7D9-4BB2-BFDA-4561F921B1D5"
@@ -1839,6 +1864,9 @@ class Joy188Test3(unittest.TestCase):
             if i in ['kerr010','hsieh0620']:# 玩家 會使用更換密碼街口
                 Joy188Test.select_userPass(Joy188Test.get_conn(envs),i)#找出動態的密碼, 避免更換密碼被更動
                 login_data = Joy188Test3.Iapi_LoginData(username=i,uuid_=uuid,passwd=password[0])
+            elif i in env_dict['APP合營']:
+                login_data = Joy188Test3.Iapi_LoginData(username=i,uuid_=uuid,
+                passwd=loginpasssource,joint=1)
             else:
                 login_data = Joy188Test3.Iapi_LoginData(username=i,uuid_=uuid,passwd=loginpasssource)
             try:
@@ -1882,10 +1910,10 @@ class Joy188Test3(unittest.TestCase):
         t = time.strftime('%Y%m%d %H:%M:%S')
         print(u'投注帳號: %s, 現在時間: %s'%(user,t))
         order_dict = {}# 存放  到時 要撤消單
-        try:
-            for i in lottery_dict.keys():
-                while True:
-            #for i in ['xyft','xyft168']:
+        for i in lottery_dict.keys():
+            while True:
+        #for i in ['xyft','xyft168']:
+                try:
                     now = int(time.time()*1000)#時間戳
                     lotteryid = lottery_dict[i][1]
                     if i in ['slmmc','sl115']:
@@ -1938,12 +1966,85 @@ class Joy188Test3(unittest.TestCase):
                     else:
                         pass
                         break
-
+                    break
                         #pass
-        except requests.exceptions.ConnectionError:
-            print('please wait')
-        except IndexError as e:
-            print(e)
+                except requests.exceptions.ConnectionError:
+                    print('please wait')
+                    break
+                except IndexError as e:
+                    print(e)
+                    break
+    @staticmethod
+    def test_IapiPlanSubmit():
+        '''APP追號投注'''
+        user = env_dict['APP合營'][envs]
+        data = Joy188Test3.IapiData(user)
+        t = time.strftime('%Y%m%d %H:%M:%S')
+        print(u'投注帳號: %s, 現在時間: %s'%(user,t))
+        for lottery in lottery_dict.keys():
+            while True:
+                try:
+                    if lottery in ['slmmc','sl115','btcctp','lhc']:
+                        print('%s 沒開放追號'%lottery_dict[lottery][0])
+                        print('------------------------------')
+                        break
+                    elif lottery in ['pcdd','fckl8','np3','n3d']:#awardmode 需待1
+                        awardmode = 1
+                    else:
+                        awardmode = 2
+                    lotteryid = lottery_dict[lottery][1]
+                    now = int(time.time()*1000)#時間戳
+                    plan_ = Joy188Test.plan_num(envs,lottery,random.randint(2,10))#隨機生成 50期內的比數
+                    issue = plan_[0]['issueCode']# 追號 data傳到isuue參數
+                    plan_issue = []  #傳到 traceIssues 參數
+                    time_list = [] # 傳到 traceTimes 參數
+                    for i in plan_:
+                        plan_issue.append(str(i['issueCode']))# 轉str用意, 下面 join可以直接 轉出
+                        time_list.append('1')
+                    len_plan = len(plan_issue)# 把長度算出, 去乘上 單柱 2圓
+                    plan_issue = ",".join(plan_issue)# 傳到data traceIssues 參數
+                    time_list = ",".join(time_list)
+
+                    ball_type_post = Joy188Test.game_type(lottery)#玩法和內容,0為玩法名稱, 1為投注內容
+                    methodid = ball_type_post[0].replace('.','')#ex: housan.zhuiam.fushi , 把.去掉
+                    awardGroupId = Joy188Test.select_GroupId(Joy188Test.get_conn(envs),lotteryid,user)
+                    Joy188Test.select_betTypeCode(Joy188Test.get_conn(envs),lotteryid, methodid)
+
+                    param_data = data["body"]["param"]
+                    plan_list = [{"methodid": bet_type[0] ,"codes": ball_type_post[1],"nums":1,
+                    "fileMode":0,"mode":1,"times":1,"money":2,"awardMode":awardmode}]
+                    
+                    plan_data = {"saleTime": now,"userIp":"1037863469","isFirstSubmit":0,
+                    "channelId":202,"channelVersion":"12.0.23.0013",
+                    "lotteryId": "%s"%lotteryid,"issue":"%s"%issue , "traceStop":2,"money": 2*len_plan,
+                    "redDiscountTotal":0,
+                    "awardGroupId":"%s"%awardGroupId ,"list":plan_list,"traceIstrace":1,
+                    "traceIssues":"%s"%plan_issue,"traceTimes":"%s"%time_list}
+                    param_data.update(plan_data)
+                    data['body']['param'] = param_data
+                    r = requests.post(env+'game/plan',data=json.dumps(data),headers=App_header)
+                    #print(r.json())
+                    if r.json()['head']['status'] == 0: #status0 為投注成功
+                        planid = r.json()['body']['result']['gamePlanId']
+                        plan_code = Joy188Test.select_PlanCode(conn=Joy188Test.get_conn(envs),
+                                                               type_='app',planid=planid)
+                        print('%s 投注成功'%lottery_dict[lottery][0])
+                        print(play_)#投注完法 中文名稱
+                        print(u"投注內容: %s"%ball_type_post[1])
+                        print(u"投注金額: %s, 追號期數: %s"%(2*len_plan ,len_plan ))#mul 為game_type方法對甕倍數
+                        print('追號單號: %s'%plan_code)
+                        print('------------------------------')
+                        break
+
+                    else:
+                        print('%s 追號失敗'%lottery_dict[lottery][0])
+                        print('------------------------------')
+                        break
+                    break
+                except IndexError as e:
+                    print('%s, %s'%(e,lottery_dict[lottery][0]))
+                    print('------------------------------')
+                    break
     @staticmethod
     def test_IapiTransfer():
         '''APP上下級轉帳'''
@@ -2059,86 +2160,121 @@ class Joy188Test3(unittest.TestCase):
     def test_IapiCancelSubmit():
         '''APP撤消投注'''
         user = env_dict['APP帳號'][envs]
-        ran_  = random.randint(0,len(cancel_lottery_list))# 隨機長
-        try:
-            can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
-        except IndexError:
-            ran_  = random.randint(0,3)# 隨機長
-            can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
-        orderid = list(order_dict[can_lottery].values())[0]
-        
-        data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"","sessionId":token_[user]},"body":{"pager":{"startNo":"1","endNo":"99999"},"param":{
-            "CGISESSID":token_[user],"id": str(orderid),"app_id":"9","come_from":"3","appname":"1"}}}
-        r = requests.post(env+'game/cancelGame',data=json.dumps(data_),headers=App_header)
-        print('撤消彩種: %s ,方案編號: %s '%(lottery_dict[can_lottery][0] ,
-                                     list(order_dict[can_lottery].keys())[0]))  
-        if r.json()['head']['status'] == 0:
-            print('撤消成功')
-        else:
-            print('撤銷失敗')
+        while True:
+            ran_  = random.randint(0,len(cancel_lottery_list))# 隨機長
+            try:
+                can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
+            except IndexError:
+                ran_  = random.randint(0,3)# 隨機長
+                can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
+            orderid = list(order_dict[can_lottery].values())[0]
+
+            data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"","sessionId":token_[user]},"body":{"pager":{"startNo":"1","endNo":"99999"},"param":{
+                "CGISESSID":token_[user],"id": str(orderid),"app_id":"9","come_from":"3","appname":"1"}}}
+            r = requests.post(env+'game/cancelGame',data=json.dumps(data_),headers=App_header)
+            print('撤消彩種: %s ,方案編號: %s '%(lottery_dict[can_lottery][0] ,
+                                         list(order_dict[can_lottery].keys())[0]))  
+            if r.json()['head']['status'] == 0:
+                print('撤消成功')
+                break
+            else:
+                print('撤銷失敗')
             
     @staticmethod
     def test_OpenLink():
         '''APP開戶中心'''
-        user = env_dict['一般帳號'][envs]
-        data_ = Joy188Test3.IapiData(user)
-        param_data = data_["body"]["param"]
-        #info_dict ,dev和 188會因為用戶反點不同而不同
-        info_dict = {0: [{"lotteryId":"77101","lotteryName":"\\u4e50\\u5229\\u771f\\u4eba\\u5f69",
-        "lotterySeriesCode":10,"lotterySeriesName":"\\u771f\\u4eba\\u5f69\\u7968","awardGroupId":77101,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","directLimitRet":500},
-        {"lotteryId":"99101","lotteryName":"\\u6b22\\u4e50\\u751f\\u8096","lotterySeriesCode":1,
-         "lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":12,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99103","lotteryName":"\\u65b0\\u7586\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":19,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99104","lotteryName":"\\u5929\\u6d25\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":36,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":13,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":5,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"790","threeoneRet":"290","directLimitRet":1000,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":16,"awardName":"\\u5956\\u91d1\\u7ec41500","directRet":"1790","threeoneRet":"1090","directLimitRet":2000,"threeLimitRet":1300,"superLimitRet":100},{"lotteryId":"99106","lotteryName":"\\u51e4\\u51f0\\u4e50\\u5229\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":33,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99107","lotteryName":"\\u4e0a\\u6d77\\u65f6\\u65f6\\u4e50","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":15,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99108","lotteryName":"3D","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":101,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"790","threeoneRet":"290","directLimitRet":1000,"threeLimitRet":500},{"lotteryId":"99109","lotteryName":"P5","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":102,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"790","threeoneRet":"290","directLimitRet":1000,"threeLimitRet":500},{"lotteryId":"99111","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":41,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99112","lotteryName":"\\u51e4\\u51f0\\u987a\\u5229\\u79d2\\u79d2\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":56,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99113","lotteryName":"\\u8d85\\u7ea72000\\u79d2\\u79d2\\u5f69(APP\\u7248)","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":11416083,"awardName":"2000\\u5956\\u91d1\\u7ec4","superLimitRet":100},{"lotteryId":"99114","lotteryName":"\\u817e\\u8baf\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":208,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99115","lotteryName":"\\u51e4\\u51f0\\u6bd4\\u7279\\u5e01\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":214,"awardName":"\\u5956\\u91d1\\u7ec41000","directRet":"4590","threeoneRet":"4590","directLimitRet":4800,"threeLimitRet":4800},{"lotteryId":"99116","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":228,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99117","lotteryName":"\\u51e4\\u51f0\\u91cd\\u5e86\\u5168\\u7403\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":263,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99118","lotteryName":"\\u51e4\\u51f0\\u65b0\\u7586\\u5168\\u7403\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":264,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99119","lotteryName":"\\u6cb3\\u5185\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":268,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99120","lotteryName":"\\u6cb3\\u5185\\u4e94\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":273,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99121","lotteryName":"360\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":274,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99122","lotteryName":"360\\u4e94\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":275,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99123","lotteryName":"\\u8d8a\\u5357\\u798f\\u5f69","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":278,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99124","lotteryName":"\\u8d8a\\u53573D\\u798f\\u5f69","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":279,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99125","lotteryName":"\\u5947\\u8da3\\u817e\\u8baf\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":308,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99126","lotteryName":"\\u591a\\u5f69\\u6cb3\\u5185\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":316,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99201","lotteryName":"\\u5317\\u4eac\\u5feb\\u4e508","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":32,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1290","threeoneRet":"790","directLimitRet":1500,"threeLimitRet":1000},{"lotteryId":"99202","lotteryName":"PK10","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":206,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","directLimitRet":500},{"lotteryId":"99203","lotteryName":"\\u98de\\u8247","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":233,"awardName":"\\u5956\\u91d1\\u7ec41000","directRet":"4590","directLimitRet":4800},{"lotteryId":"99204","lotteryName":"PC\\u86cb\\u86cb","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":283,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","directLimitRet":500},{"lotteryId":"99205","lotteryName":"168\\u98de\\u8247","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":293,"awardName":"\\u5956\\u91d1\\u7ec41000","directRet":"4590","directLimitRet":4800},{"lotteryId":"99206","lotteryName":"\\u798f\\u5f69\\u5feb\\u4e508","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":298,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1290","threeoneRet":"790","directLimitRet":1500,"threeLimitRet":1000},{"lotteryId":"99207","lotteryName":"\\u5feb\\u4e508\\u5168\\u7403\\u5f69","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":303,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1290","threeoneRet":"790","directLimitRet":1500,"threeLimitRet":1000},{"lotteryId":"99301","lotteryName":"\\u5c71\\u4e1c11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":24,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99302","lotteryName":"\\u6c5f\\u897f11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":27,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99303","lotteryName":"\\u5e7f\\u4e1c11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":29,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99306","lotteryName":"\\u51e4\\u51f0\\u987a\\u522911\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":192,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99401","lotteryName":"\\u53cc\\u8272\\u7403","lotterySeriesCode":5,"lotterySeriesName":"\\u53cc\\u8272\\u7403\\u7cfb","awardGroupId":107,"awardName":"\\u53cc\\u8272\\u7403\\u5956\\u91d1\\u7ec4","directRet":"790","directLimitRet":1000},{"lotteryId":"99501","lotteryName":"\\u6c5f\\u82cf\\u5feb\\u4e09","lotterySeriesCode":6,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":188,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"590","directLimitRet":800},{"lotteryId":"99502","lotteryName":"\\u5b89\\u5fbd\\u5feb\\u4e09","lotterySeriesCode":6,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":190,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"590","directLimitRet":800},{"lotteryId":"99601","lotteryName":"\\u6c5f\\u82cf\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":189,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99602","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u5a31\\u4e50\\u5385)","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":203,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99603","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u81f3\\u5c0a\\u5385)","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":204,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99604","lotteryName":"\\u5b89\\u5fbd\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":11416087,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99605","lotteryName":"\\u51e4\\u51f0\\u987a\\u5229\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":207,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500,"threeLimitRet":150},{"lotteryId":"99701","lotteryName":"\\u516d\\u5408\\u5f69","lotterySeriesCode":9,"lotterySeriesName":"\\u516d\\u5408\\u7cfb","awardGroupId":202,"awardName":"\\u516d\\u5408\\u5f69\\u5956\\u91d1\\u7ec4","directRet":"1190","lhcFlatcode":"190","lhcYear":"90","lhcColor":"90","lhcHalfwave":"90","lhcNotin":"90","lhcContinuein23":"90","lhcContinuein4":"290","lhcContinuein5":"290","lhcContinuenotin23":"90","lhcContinuenotin4":"290","lhcContinuenotin5":"290","lhcContinuecode":"290","directLimitRet":1400,"lhcYearLimit":300,"lhcColorLimit":300,"lhcFlatcodeLimit":400,"lhcHalfwaveLimit":300,"lhcOneyearLimit":200,"lhcNotinLimit":300,"lhcContinuein23Limit":300,"lhcContinuein4Limit":500,"lhcContinuein5Limit":500,"lhcContinuenotin23Limit":300,"lhcContinuenotin4Limit":500,"lhcContinuenotin5Limit":500,"lhcContinuecodeLimit":500},{"lotteryId":"99801","lotteryName":"\\u51e4\\u51f0\\u5409\\u52293D","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":223,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99901","lotteryName":"\\u5feb\\u5f00","lotterySeriesCode":11,"lotterySeriesName":"\\u9ad8\\u9891\\u5f69\\u7cfb",
-        "awardGroupId":238,"awardName":"\\u5956\\u91d1\\u7ec41800","directLimitRet":200}]
-                , 1: [{"lotteryId": "77101", "lotterySeriesCode": 10, "lotterySeriesName": "\\\\u771f\\\\u4eba\\\\u5f69\\\\u7968", "awardGroupId": 77101, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99101", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 12, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99103", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 19, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99104", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 36, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 405, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99105", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 13, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99106", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 33, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99107", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 15, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99108", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\\\u7cfb", "awardGroupId": 101, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41700", "directLimitRet": 950, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99109", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\\\u7cfb", "awardGroupId": 102, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41700", "directLimitRet": 950, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99111", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 41, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99112", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 56, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99113", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 205, "awardName": "2000\\\\u5956\\\\u91d1\\\\u7ec4", "superLimitRet": 90, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99114", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 208, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99115", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 219, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41000", "directLimitRet": 4300, "threeLimitRet": 4300, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99116", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 231, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99117", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 248, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99118", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 249, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99201", "lotterySeriesCode": 4, "lotterySeriesName": "\\\\u57fa\\\\u8bfa\\\\u7cfb", "awardGroupId": 32, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99202", "lotterySeriesCode": 4, "lotterySeriesName": "\\\\u57fa\\\\u8bfa\\\\u7cfb", "awardGroupId": 206, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99203", "lotterySeriesCode": 4, "lotterySeriesName": "\\\\u57fa\\\\u8bfa\\\\u7cfb", "awardGroupId": 238, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41000", "directLimitRet": 4300, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99301", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 24, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41782", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99302", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 26, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41620", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99303", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 29, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41782", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99306", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 192, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41782", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99401", "lotterySeriesCode": 5, "lotterySeriesName": "\\\\u53cc\\\\u8272\\\\u7403\\\\u7cfb", "awardGroupId": 107, "awardName": "\\\\u53cc\\\\u8272\\\\u7403\\\\u5956\\\\u91d1\\\\u7ec4", "directLimitRet": 950, "threeLimitRet": 950, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99501", "lotterySeriesCode": 6, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 188, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99502", "lotterySeriesCode": 6, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 190, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99601", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 189, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99602", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 203, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99604", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 213, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99605", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 207, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99701", "lotterySeriesCode": 9, "lotterySeriesName": "\\\\u516d\\\\u5408\\\\u7cfb", "awardGroupId": 202, "awardName": "\\\\u516d\\\\u5408\\\\u5f69\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0, "lhcYear": 0, "lhcColor": 0, "lhcFlatcode": 0, "lhcHalfwave": 0, "lhcOneyear": 0, "lhcNotin": 0, "lhcContinuein23": 0, "lhcContinuein4": 0, "lhcContinuein5": 0, "lhcContinuenotin23": 0, "lhcContinuenotin4": 0, "lhcContinuenotin5": 0, "lhcContinuecode": 0}, {"lotteryId": "99801", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\\\u7cfb", "awardGroupId": 223, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99901", "lotterySeriesCode": 11, "lotterySeriesName": "\\\\u9ad8\\\\u9891\\\\u5f69\\\\u7cfb", "awardGroupId": 243, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}]
-                    }
-        domain_dict = {0: "http://www.dev02.com",
-                       1: "http:\\\\/\\\\/www2.joy188.com:888"
-                      }
-        OpenLink_data = {"type": 1, "days": -1, "infos":info_dict[envs],
-                        "memo": "autoTest", "setUp": 1,"domain": domain_dict[envs]}
-        param_data.update(OpenLink_data)
-        data_['body']['param'] = param_data
-        r = requests.post(env+'information/doRetSetting',data=json.dumps(data_),headers=App_header) 
-        if r.json()['head']['status'] == 0:
-            print('開戶連結創立成功')
-            data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"",
-            "sessionId":token_[user]},"body":{"param":{"CGISESSID":token_[user],"app_id":"10","come_from":"4",
-            "appname":"1"},"pager":{"startNo":"","endNo":""}}}                                                                                     
+        global token_result
+        token_result = {}# 到時會回傳給 註冊用, 裡面存放  開戶連結 exp, token ....
+        for i in range(2):
+            if i ==0:
+                print('一般: ')
+                user = env_dict['一般帳號'][envs]
+            else:
+                print('合營: ')
+                user = env_dict['APP合營'][envs]
+            data_ = Joy188Test3.IapiData(user)
+            param_data = data_["body"]["param"]
+            #info_dict ,dev和 188會因為用戶反點不同而不同
+            info_dict = {0: [
+            [{"lotteryId":"77101","lotteryName":"\\u4e50\\u5229\\u771f\\u4eba\\u5f69",
+            "lotterySeriesCode":10,"lotterySeriesName":"\\u771f\\u4eba\\u5f69\\u7968","awardGroupId":77101,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","directLimitRet":5000},
+            {"lotteryId":"99101","lotteryName":"\\u6b22\\u4e50\\u751f\\u8096","lotterySeriesCode":1,
+             "lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":12,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99103","lotteryName":"\\u65b0\\u7586\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":19,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99104","lotteryName":"\\u5929\\u6d25\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":36,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":13,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":5,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"790","threeoneRet":"290","directLimitRet":1000,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":16,"awardName":"\\u5956\\u91d1\\u7ec41500","directRet":"1790","threeoneRet":"1090","directLimitRet":2000,"threeLimitRet":1300,"superLimitRet":100},{"lotteryId":"99106","lotteryName":"\\u51e4\\u51f0\\u4e50\\u5229\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":33,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99107","lotteryName":"\\u4e0a\\u6d77\\u65f6\\u65f6\\u4e50","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":15,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99108","lotteryName":"3D","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":101,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"790","threeoneRet":"290","directLimitRet":1000,"threeLimitRet":500},{"lotteryId":"99109","lotteryName":"P5","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":102,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"790","threeoneRet":"290","directLimitRet":1000,"threeLimitRet":500},{"lotteryId":"99111","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":41,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99112","lotteryName":"\\u51e4\\u51f0\\u987a\\u5229\\u79d2\\u79d2\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":56,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99113","lotteryName":"\\u8d85\\u7ea72000\\u79d2\\u79d2\\u5f69(APP\\u7248)","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":11416083,"awardName":"2000\\u5956\\u91d1\\u7ec4","superLimitRet":100},{"lotteryId":"99114","lotteryName":"\\u817e\\u8baf\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":208,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99115","lotteryName":"\\u51e4\\u51f0\\u6bd4\\u7279\\u5e01\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":214,"awardName":"\\u5956\\u91d1\\u7ec41000","directRet":"4590","threeoneRet":"4590","directLimitRet":4800,"threeLimitRet":4800},{"lotteryId":"99116","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":228,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99117","lotteryName":"\\u51e4\\u51f0\\u91cd\\u5e86\\u5168\\u7403\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":263,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99118","lotteryName":"\\u51e4\\u51f0\\u65b0\\u7586\\u5168\\u7403\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":264,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99119","lotteryName":"\\u6cb3\\u5185\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":268,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99120","lotteryName":"\\u6cb3\\u5185\\u4e94\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":273,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99121","lotteryName":"360\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":274,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99122","lotteryName":"360\\u4e94\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":275,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500,"superLimitRet":100},{"lotteryId":"99123","lotteryName":"\\u8d8a\\u5357\\u798f\\u5f69","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":278,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99124","lotteryName":"\\u8d8a\\u53573D\\u798f\\u5f69","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":279,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99125","lotteryName":"\\u5947\\u8da3\\u817e\\u8baf\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":308,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99126","lotteryName":"\\u591a\\u5f69\\u6cb3\\u5185\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":316,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99201","lotteryName":"\\u5317\\u4eac\\u5feb\\u4e508","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":32,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1290","threeoneRet":"790","directLimitRet":1500,"threeLimitRet":1000},{"lotteryId":"99202","lotteryName":"PK10","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":206,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","directLimitRet":500},{"lotteryId":"99203","lotteryName":"\\u98de\\u8247","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":233,"awardName":"\\u5956\\u91d1\\u7ec41000","directRet":"4590","directLimitRet":4800},{"lotteryId":"99204","lotteryName":"PC\\u86cb\\u86cb","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":283,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","directLimitRet":500},{"lotteryId":"99205","lotteryName":"168\\u98de\\u8247","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":293,"awardName":"\\u5956\\u91d1\\u7ec41000","directRet":"4590","directLimitRet":4800},{"lotteryId":"99206","lotteryName":"\\u798f\\u5f69\\u5feb\\u4e508","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":298,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1290","threeoneRet":"790","directLimitRet":1500,"threeLimitRet":1000},{"lotteryId":"99207","lotteryName":"\\u5feb\\u4e508\\u5168\\u7403\\u5f69","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":303,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1290","threeoneRet":"790","directLimitRet":1500,"threeLimitRet":1000},{"lotteryId":"99301","lotteryName":"\\u5c71\\u4e1c11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":24,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99302","lotteryName":"\\u6c5f\\u897f11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":27,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99303","lotteryName":"\\u5e7f\\u4e1c11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":29,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99306","lotteryName":"\\u51e4\\u51f0\\u987a\\u522911\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":192,"awardName":"\\u5956\\u91d1\\u7ec41782","directRet":"290","directLimitRet":500},{"lotteryId":"99401","lotteryName":"\\u53cc\\u8272\\u7403","lotterySeriesCode":5,"lotterySeriesName":"\\u53cc\\u8272\\u7403\\u7cfb","awardGroupId":107,"awardName":"\\u53cc\\u8272\\u7403\\u5956\\u91d1\\u7ec4","directRet":"790","directLimitRet":1000},{"lotteryId":"99501","lotteryName":"\\u6c5f\\u82cf\\u5feb\\u4e09","lotterySeriesCode":6,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":188,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"590","directLimitRet":800},{"lotteryId":"99502","lotteryName":"\\u5b89\\u5fbd\\u5feb\\u4e09","lotterySeriesCode":6,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":190,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"590","directLimitRet":800},{"lotteryId":"99601","lotteryName":"\\u6c5f\\u82cf\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":189,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99602","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u5a31\\u4e50\\u5385)","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":203,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99603","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u81f3\\u5c0a\\u5385)","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":204,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99604","lotteryName":"\\u5b89\\u5fbd\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":11416087,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500},{"lotteryId":"99605","lotteryName":"\\u51e4\\u51f0\\u987a\\u5229\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":207,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"290","directLimitRet":500,"threeLimitRet":150},{"lotteryId":"99701","lotteryName":"\\u516d\\u5408\\u5f69","lotterySeriesCode":9,"lotterySeriesName":"\\u516d\\u5408\\u7cfb","awardGroupId":202,"awardName":"\\u516d\\u5408\\u5f69\\u5956\\u91d1\\u7ec4","directRet":"1190","lhcFlatcode":"190","lhcYear":"90","lhcColor":"90","lhcHalfwave":"90","lhcNotin":"90","lhcContinuein23":"90","lhcContinuein4":"290","lhcContinuein5":"290","lhcContinuenotin23":"90","lhcContinuenotin4":"290","lhcContinuenotin5":"290","lhcContinuecode":"290","directLimitRet":1400,"lhcYearLimit":300,"lhcColorLimit":300,"lhcFlatcodeLimit":400,"lhcHalfwaveLimit":300,"lhcOneyearLimit":200,"lhcNotinLimit":300,"lhcContinuein23Limit":300,"lhcContinuein4Limit":500,"lhcContinuein5Limit":500,"lhcContinuenotin23Limit":300,"lhcContinuenotin4Limit":500,"lhcContinuenotin5Limit":500,"lhcContinuecodeLimit":500},{"lotteryId":"99801","lotteryName":"\\u51e4\\u51f0\\u5409\\u52293D","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":223,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"290","threeoneRet":"290","directLimitRet":500,"threeLimitRet":500},{"lotteryId":"99901","lotteryName":"\\u5feb\\u5f00","lotterySeriesCode":11,"lotterySeriesName":"\\u9ad8\\u9891\\u5f69\\u7cfb",
+            "awardGroupId":238,"awardName":"\\u5956\\u91d1\\u7ec41800","directLimitRet":200}],
+            [{"lotteryId":"77101","lotteryName":"\\u4e50\\u5229\\u771f\\u4eba\\u5f69","lotterySeriesCode":10,"lotterySeriesName":"\\u771f\\u4eba\\u5f69\\u7968","awardGroupId":77101,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"420","directLimitRet":500},{"lotteryId":"99101","lotteryName":"\\u6b22\\u4e50\\u751f\\u8096","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":12,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":141},{"lotteryId":"99103","lotteryName":"\\u65b0\\u7586\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":19,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":143},{"lotteryId":"99104","lotteryName":"\\u5929\\u6d25\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":36,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":144},{"lotteryId":"99105","lotteryName":"\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":13,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":145},{"lotteryId":"99106","lotteryName":"\\u51e4\\u51f0\\u4e50\\u5229\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":33,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":146},{"lotteryId":"99107","lotteryName":"\\u4e0a\\u6d77\\u65f6\\u65f6\\u4e50","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":15,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":147},{"lotteryId":"99108","lotteryName":"3D","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":101,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"1320","threeoneRet":"920","directLimitRet":1400,"threeLimitRet":1000},{"lotteryId":"99109","lotteryName":"P5","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":102,"awardName":"\\u5956\\u91d1\\u7ec41700","directRet":"1320","threeoneRet":"920","directLimitRet":1400,"threeLimitRet":1000},{"lotteryId":"99111","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":41,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":150},{"lotteryId":"99112","lotteryName":"\\u51e4\\u51f0\\u987a\\u5229\\u79d2\\u79d2\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":56,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":151},{"lotteryId":"99113","lotteryName":"\\u8d85\\u7ea72000\\u79d2\\u79d2\\u5f69(APP\\u7248)","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":11416083,"awardName":"2000\\u5956\\u91d1\\u7ec4","superRet":"20","superLimitRet":100},{"lotteryId":"99114","lotteryName":"\\u817e\\u8baf\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":208,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":152},{"lotteryId":"99115","lotteryName":"\\u51e4\\u51f0\\u6bd4\\u7279\\u5e01\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":214,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"220","threeoneRet":"220","directLimitRet":300,"threeLimitRet":300,"sysAwardGroupExtraId":153},{"lotteryId":"99116","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u65f6\\u65f6\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":228,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":154},{"lotteryId":"99117","lotteryName":"\\u51e4\\u51f0\\u91cd\\u5e86\\u5168\\u7403\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":263,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":155},{"lotteryId":"99118","lotteryName":"\\u51e4\\u51f0\\u65b0\\u7586\\u5168\\u7403\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":264,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":156},{"lotteryId":"99119","lotteryName":"\\u6cb3\\u5185\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":268,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":157},{"lotteryId":"99120","lotteryName":"\\u6cb3\\u5185\\u4e94\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":273,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":158},{"lotteryId":"99121","lotteryName":"360\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":274,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":159},{"lotteryId":"99122","lotteryName":"360\\u4e94\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":275,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","superRet":"20","directLimitRet":400,"threeLimitRet":500,"superLimitRet":100,"sysAwardGroupExtraId":160},{"lotteryId":"99123","lotteryName":"\\u8d8a\\u5357\\u798f\\u5f69","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":278,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"820","threeoneRet":"920","directLimitRet":900,"threeLimitRet":1000},{"lotteryId":"99124","lotteryName":"\\u8d8a\\u53573D\\u798f\\u5f69","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":279,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"820","threeoneRet":"920","directLimitRet":900,"threeLimitRet":1000},{"lotteryId":"99125","lotteryName":"\\u5947\\u8da3\\u817e\\u8baf\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":308,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":261},{"lotteryId":"99126","lotteryName":"\\u591a\\u5f69\\u6cb3\\u5185\\u5206\\u5206\\u5f69","lotterySeriesCode":1,"lotterySeriesName":"\\u65f6\\u65f6\\u5f69\\u7cfb","awardGroupId":316,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":262},{"lotteryId":"99201","lotteryName":"\\u5317\\u4eac\\u5feb\\u4e508","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":32,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1920","threeoneRet":"1320","directLimitRet":2000,"threeLimitRet":1400},{"lotteryId":"99202","lotteryName":"PK10","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":206,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":164},{"lotteryId":"99203","lotteryName":"\\u98de\\u8247","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":233,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"220","directLimitRet":300,"sysAwardGroupExtraId":165},{"lotteryId":"99204","lotteryName":"PC\\u86cb\\u86cb","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":283,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"220","directLimitRet":300,"sysAwardGroupExtraId":201},{"lotteryId":"99205","lotteryName":"168\\u98de\\u8247","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":293,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"220","directLimitRet":300,"sysAwardGroupExtraId":241},{"lotteryId":"99206","lotteryName":"\\u798f\\u5f69\\u5feb\\u4e508","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":298,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1920","threeoneRet":"1320","directLimitRet":2000,"threeLimitRet":1400},{"lotteryId":"99207","lotteryName":"\\u5feb\\u4e508\\u5168\\u7403\\u5f69","lotterySeriesCode":4,"lotterySeriesName":"\\u57fa\\u8bfa\\u7cfb","awardGroupId":303,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"1920","threeoneRet":"1320","directLimitRet":2000,"threeLimitRet":1400},{"lotteryId":"99301","lotteryName":"\\u5c71\\u4e1c11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":24,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":166},{"lotteryId":"99302","lotteryName":"\\u6c5f\\u897f11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":27,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":167},{"lotteryId":"99303","lotteryName":"\\u5e7f\\u4e1c11\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":29,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":168},{"lotteryId":"99306","lotteryName":"\\u51e4\\u51f0\\u987a\\u522911\\u90095","lotterySeriesCode":3,"lotterySeriesName":"11\\u90095\\u7cfb","awardGroupId":192,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":171},{"lotteryId":"99401","lotteryName":"\\u53cc\\u8272\\u7403","lotterySeriesCode":5,"lotterySeriesName":"\\u53cc\\u8272\\u7403\\u7cfb","awardGroupId":107,"awardName":"\\u53cc\\u8272\\u7403\\u5956\\u91d1\\u7ec4","directRet":"1420","directLimitRet":1500},{"lotteryId":"99501","lotteryName":"\\u6c5f\\u82cf\\u5feb\\u4e09","lotterySeriesCode":6,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":188,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":221},{"lotteryId":"99502","lotteryName":"\\u5b89\\u5fbd\\u5feb\\u4e09","lotterySeriesCode":6,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":190,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"420","directLimitRet":500,"sysAwardGroupExtraId":222},{"lotteryId":"99601","lotteryName":"\\u6c5f\\u82cf\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":189,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"820","directLimitRet":900},{"lotteryId":"99602","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u5a31\\u4e50\\u5385)","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":203,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"820","directLimitRet":900},{"lotteryId":"99603","lotteryName":"\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u81f3\\u5c0a\\u5385)","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":204,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"820","directLimitRet":900},{"lotteryId":"99604","lotteryName":"\\u5b89\\u5fbd\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":11416087,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"820","directLimitRet":900},{"lotteryId":"99605","lotteryName":"\\u51e4\\u51f0\\u987a\\u5229\\u9ab0\\u5b9d","lotterySeriesCode":7,"lotterySeriesName":"\\u5feb\\u4e50\\u5f69\\u7cfb","awardGroupId":207,"awardName":"\\u6df7\\u5408\\u5956\\u91d1\\u7ec4","directRet":"820","threeoneRet":"70","directLimitRet":900,"threeLimitRet":150},{"lotteryId":"99701","lotteryName":"\\u516d\\u5408\\u5f69","lotterySeriesCode":9,"lotterySeriesName":"\\u516d\\u5408\\u7cfb","awardGroupId":202,"awardName":"\\u516d\\u5408\\u5f69\\u5956\\u91d1\\u7ec4","directRet":"1320","lhcFlatcode":"320","lhcYear":"220","lhcColor":"220","lhcHalfwave":"220","lhcOneyear":"120","lhcNotin":"220","lhcContinuein23":"220","lhcContinuein4":"420","lhcContinuein5":"420","lhcContinuenotin23":"220","lhcContinuenotin4":"420","lhcContinuenotin5":"420","lhcContinuecode":"420","directLimitRet":1400,"lhcYearLimit":300,"lhcColorLimit":300,"lhcFlatcodeLimit":400,"lhcHalfwaveLimit":300,"lhcOneyearLimit":200,"lhcNotinLimit":300,"lhcContinuein23Limit":300,"lhcContinuein4Limit":500,"lhcContinuein5Limit":500,"lhcContinuenotin23Limit":300,"lhcContinuenotin4Limit":500,"lhcContinuenotin5Limit":500,"lhcContinuecodeLimit":500},{"lotteryId":"99801","lotteryName":"\\u51e4\\u51f0\\u5409\\u52293D","lotterySeriesCode":2,"lotterySeriesName":"3D\\u7cfb","awardGroupId":223,"awardName":"\\u5956\\u91d1\\u7ec41900","directRet":"320","threeoneRet":"420","directLimitRet":400,"threeLimitRet":500,"sysAwardGroupExtraId":180},{"lotteryId":"99901","lotteryName":"\\u5feb\\u5f00","lotterySeriesCode":11,"lotterySeriesName":"\\u9ad8\\u9891\\u5f69\\u7cfb","awardGroupId":238,"awardName":"\\u5956\\u91d1\\u7ec41800","directRet":"120","directLimitRet":200}]
             
-            r = requests.post(env+'information/openLinkList',data=json.dumps(data_),headers=App_header) 
-            result = r.json()['body']['result']['list'][0]
-            #print(result)
-            global regCode,new_token,exp,pid
-            regCode = result['regCode']#回傳開戶 的 id
-            new_token = result['urlstring'].split('token=')[1]#回傳 開戶 的token
-            exp = result['urlstring'].split('exp=')[1].split('&')[0]
-            pid = result['urlstring'].split('pid=')[1].split('&')[0]
-            print('%s 的 開戶連結'%user)
-            print("註冊連結: %s, 註冊碼: %s, 建置於: %s"%(result['urlstring'],result['regCode'],result['start']))
-        else:
-            print('創立失敗')
+            ]
+            , 1: [[{"lotteryId": "77101", "lotterySeriesCode": 10, "lotterySeriesName": "\\\\u771f\\\\u4eba\\\\u5f69\\\\u7968", "awardGroupId": 77101, 
+                    "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99101", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 12, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99103", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 19, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99104", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 36, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 405, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99105", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 13, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99106", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 33, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99107", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 15, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99108", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\\\u7cfb", "awardGroupId": 101, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41700", "directLimitRet": 950, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99109", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\\\u7cfb", "awardGroupId": 102, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41700", "directLimitRet": 950, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99111", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 41, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99112", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 56, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99113", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 205, "awardName": "2000\\\\u5956\\\\u91d1\\\\u7ec4", "superLimitRet": 90, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99114", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 208, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99115", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 219, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41000", "directLimitRet": 4300, "threeLimitRet": 4300, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99116", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 231, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99117", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 248, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99118", "lotterySeriesCode": 1, "lotterySeriesName": "\\\\u65f6\\\\u65f6\\\\u5f69\\\\u7cfb", "awardGroupId": 249, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99201", "lotterySeriesCode": 4, "lotterySeriesName": "\\\\u57fa\\\\u8bfa\\\\u7cfb", "awardGroupId": 32, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99202", "lotterySeriesCode": 4, "lotterySeriesName": "\\\\u57fa\\\\u8bfa\\\\u7cfb", "awardGroupId": 206, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99203", "lotterySeriesCode": 4, "lotterySeriesName": "\\\\u57fa\\\\u8bfa\\\\u7cfb", "awardGroupId": 238, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41000", "directLimitRet": 4300, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99301", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 24, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41782", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99302", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 26, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41620", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99303", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 29, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41782", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99306", "lotterySeriesCode": 3, "lotterySeriesName": "11\\\\u90095\\\\u7cfb", "awardGroupId": 192, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41782", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99401", "lotterySeriesCode": 5, "lotterySeriesName": "\\\\u53cc\\\\u8272\\\\u7403\\\\u7cfb", "awardGroupId": 107, "awardName": "\\\\u53cc\\\\u8272\\\\u7403\\\\u5956\\\\u91d1\\\\u7ec4", "directLimitRet": 950, "threeLimitRet": 950, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99501", "lotterySeriesCode": 6, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 188, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99502", "lotterySeriesCode": 6, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 190, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99601", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 189, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99602", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 203, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99604", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 213, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99605", "lotterySeriesCode": 7, "lotterySeriesName": "\\\\u5feb\\\\u4e50\\\\u5f69\\\\u7cfb", "awardGroupId": 207, "awardName": "\\\\u6df7\\\\u5408\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99701", "lotterySeriesCode": 9, "lotterySeriesName": "\\\\u516d\\\\u5408\\\\u7cfb", "awardGroupId": 202, "awardName": "\\\\u516d\\\\u5408\\\\u5f69\\\\u5956\\\\u91d1\\\\u7ec4", "directRet": 0, "threeoneRet": 0, "superRet": 0, "lhcYear": 0, "lhcColor": 0, "lhcFlatcode": 0, "lhcHalfwave": 0, "lhcOneyear": 0, "lhcNotin": 0, "lhcContinuein23": 0, "lhcContinuein4": 0, "lhcContinuein5": 0, "lhcContinuenotin23": 0, "lhcContinuenotin4": 0, "lhcContinuenotin5": 0, "lhcContinuecode": 0}, {"lotteryId": "99801", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\\\u7cfb", "awardGroupId": 223, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", "directLimitRet": 450, "threeLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}, {"lotteryId": "99901", "lotterySeriesCode": 11, "lotterySeriesName": "\\\\u9ad8\\\\u9891\\\\u5f69\\\\u7cfb", "awardGroupId": 243, "awardName": "\\\\u5956\\\\u91d1\\\\u7ec41800", 
+                    "directLimitRet": 450, "directRet": 0, "threeoneRet": 0, "superRet": 0}],
+                  [{"lotteryId": "77101", "lotteryName": "\\u4e50\\u5229\\u771f\\u4eba\\u5f69", "lotterySeriesCode": 10, "lotterySeriesName": "\\u771f\\u4eba\\u5f69\\u7968", "awardGroupId": 77101, "awardName": "\\u5956\\u91d1\\u7ec41800", "directRet": "490", "directLimitRet": 500}, {"lotteryId": "99101", "lotteryName": "\\u6b22\\u4e50\\u751f\\u8096", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 12, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 1}, {"lotteryId": "99103", "lotteryName": "\\u65b0\\u7586\\u65f6\\u65f6\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 19, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 3}, {"lotteryId": "99104", "lotteryName": "\\u5929\\u6d25\\u65f6\\u65f6\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 36, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 4}, {"lotteryId": "99105", "lotteryName": "\\u9ed1\\u9f99\\u6c5f\\u65f6\\u65f6\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 13, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 5}, {"lotteryId": "99106", "lotteryName": "\\u51e4\\u51f0\\u4e50\\u5229\\u65f6\\u65f6\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 33, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 6}, {"lotteryId": "99107", "lotteryName": "\\u4e0a\\u6d77\\u65f6\\u65f6\\u4e50", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 15, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 7}, {"lotteryId": "99108", "lotteryName": "3D", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\u7cfb", "awardGroupId": 101, "awardName": "\\u5956\\u91d1\\u7ec41700", "directRet": "1290", "threeoneRet": "790", "directLimitRet": 1300, "threeLimitRet": 800}, {"lotteryId": "99109", "lotteryName": "P5", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\u7cfb", "awardGroupId": 102, "awardName": "\\u5956\\u91d1\\u7ec41700", "directRet": "1290", "threeoneRet": "790", "directLimitRet": 1300, "threeLimitRet": 800}, {"lotteryId": "99111", "lotteryName": "\\u51e4\\u51f0\\u5409\\u5229\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 41, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 8}, {"lotteryId": "99112", "lotteryName": "\\u51e4\\u51f0\\u987a\\u5229\\u79d2\\u79d2\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 56, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 9}, {"lotteryId": "99113", "lotteryName": "\\u8d85\\u7ea72000\\u79d2\\u79d2\\u5f69(APP\\u7248)", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 205, "awardName": "2000\\u5956\\u91d1\\u7ec4", "superRet": "90", "superLimitRet": 100}, {"lotteryId": "99114", "lotteryName": "\\u817e\\u8baf\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 208, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 10}, {"lotteryId": "99115", "lotteryName": "\\u51e4\\u51f0\\u6bd4\\u7279\\u5e01\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 219, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 11}, {"lotteryId": "99116", "lotteryName": "\\u51e4\\u51f0\\u5409\\u5229\\u65f6\\u65f6\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 231, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 12}, {"lotteryId": "99117", "lotteryName": "\\u51e4\\u51f0\\u91cd\\u5e86\\u5168\\u7403\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 248, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 13}, {"lotteryId": "99118", "lotteryName": "\\u51e4\\u51f0\\u65b0\\u7586\\u5168\\u7403\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 249
+                    , "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 14}, {"lotteryId": "99119", "lotteryName": "\\u6cb3\\u5185\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 253, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 15}, {"lotteryId": "99120", "lotteryName": "\\u6cb3\\u5185\\u4e94\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 254, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 16}, {"lotteryId": "99121", "lotteryName": "360\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 255, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 17}, {"lotteryId": "99122", "lotteryName": "360\\u4e94\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 256, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "superRet": "90", "directLimitRet": 300, "threeLimitRet": 300, "superLimitRet": 100, "sysAwardGroupExtraId": 18}, {"lotteryId": "99123", "lotteryName": "\\u8d8a\\u5357\\u798f\\u5f69", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\u7cfb", "awardGroupId": 258, "awardName": "\\u5956\\u91d1\\u7ec41800", "directRet": "740", "threeoneRet": "740", "directLimitRet": 800, "threeLimitRet": 800}, {"lotteryId": "99124", "lotteryName": "\\u8d8a\\u53573D\\u798f\\u5f69", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\u7cfb", "awardGroupId": 259, "awardName": "\\u5956\\u91d1\\u7ec41800", "directRet": "740", "threeoneRet": "740", "directLimitRet": 800, "threeLimitRet": 800}, {"lotteryId": "99125", "lotteryName": "\\u5947\\u8da3\\u817e\\u8baf\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 283, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 800, "threeLimitRet": 800 ,"sysAwardGroupExtraId": 101}, {"lotteryId": "99126", "lotteryName": "\\u591a\\u5f69\\u6cb3\\u5185\\u5206\\u5206\\u5f69", "lotterySeriesCode": 1, "lotterySeriesName": "\\u65f6\\u65f6\\u5f69\\u7cfb", "awardGroupId": 288, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 102}, {"lotteryId": "99201", "lotteryName": "\\u5317\\u4eac\\u5feb\\u4e508", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 32, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "1790", "threeoneRet": "1290", "directLimitRet": 1800, "threeLimitRet": 1300}, {"lotteryId": "99202", "lotteryName": "PK10", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 206, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 19}, {"lotteryId": "99203", "lotteryName": "\\u98de\\u8247", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 243, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 20}, {"lotteryId": "99204", "lotteryName": "PC\\u86cb\\u86cb", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 263, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 61}, {"lotteryId": "99205", "lotteryName": "168\\u98de\\u8247", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 268, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 81}, {"lotteryId": "99206", "lotteryName": "\\u798f\\u5f69\\u5feb\\u4e508", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 273, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "1790", "threeoneRet": "1290", "directLimitRet": 1800, "threeLimitRet": 1300}, {"lotteryId": "99207", "lotteryName": "\\u5feb\\u4e508\\u5168\\u7403\\u5f69", "lotterySeriesCode": 4, "lotterySeriesName": "\\u57fa\\u8bfa\\u7cfb", "awardGroupId": 278, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "1790", "threeoneRet": "1290", "directLimitRet": 1800, "threeLimitRet": 1300}, {"lotteryId": "99301", "lotteryName": "\\u5c71\\u4e1c11\\u90095", "lotterySeriesCode": 3, "lotterySeriesName": "11\\u90095\\u7cfb", "awardGroupId": 24, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 21}, {"lotteryId": "99302", "lotteryName": "\\u6c5f\\u897f11\\u90095", "lotterySeriesCode": 3, "lotterySeriesName": "11\\u90095\\u7cfb", "awardGroupId": 27, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 22}, {"lotteryId": "99303", "lotteryName": "\\u5e7f\\u4e1c11\\u90095", "lotterySeriesCode": 3, "lotterySeriesName": "11\\u90095\\u7cfb", "awardGroupId": 29, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 23}, {"lotteryId": "99306", "lotteryName": "\\u51e4\\u51f0\\u987a\\u522911\\u90095", "lotterySeriesCode": 3, "lotterySeriesName": "11\\u90095\\u7cfb", "awardGroupId": 192, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 26
+                    }, {"lotteryId": "99401", "lotteryName": "\\u53cc\\u8272\\u7403", "lotterySeriesCode": 5, "lotterySeriesName": "\\u53cc\\u8272\\u7403\\u7cfb", "awardGroupId": 107, "awardName": "\\u53cc\\u8272\\u7403\\u5956\\u91d1\\u7ec4", "directRet": "1290", "directLimitRet": 1300}, {"lotteryId": "99501", "lotteryName": "\\u6c5f\\u82cf\\u5feb\\u4e09", "lotterySeriesCode": 6, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 188, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 41
+                    }, {"lotteryId": "99502", "lotteryName": "\\u5b89\\u5fbd\\u5feb\\u4e09", "lotterySeriesCode": 6, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 190, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "290", "directLimitRet": 300, "sysAwardGroupExtraId": 42}, {"lotteryId": "99601", "lotteryName": "\\u6c5f\\u82cf\\u9ab0\\u5b9d", "lotterySeriesCode": 7, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 189, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "790", "directLimitRet": 800}, {"lotteryId": "99602", "lotteryName": "\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u5a31\\u4e50\\u5385)", "lotterySeriesCode": 7, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 203, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "740", "directLimitRet": 800}, {"lotteryId": "99603", "lotteryName": "\\u51e4\\u51f0\\u5409\\u5229\\u9ab0\\u5b9d(\\u81f3\\u5c0a\\u5385)", "lotterySeriesCode": 7, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 204, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "740", "directLimitRet": 800}, {"lotteryId": "99604", "lotteryName": "\\u5b89\\u5fbd\\u9ab0\\u5b9d", "lotterySeriesCode": 7, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 213, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "740", "directLimitRet": 800}, {"lotteryId": "99605", "lotteryName": "\\u51e4\\u51f0\\u987a\\u5229\\u9ab0\\u5b9d", "lotterySeriesCode": 7, "lotterySeriesName": "\\u5feb\\u4e50\\u5f69\\u7cfb", "awardGroupId": 207, "awardName": "\\u6df7\\u5408\\u5956\\u91d1\\u7ec4", "directRet": "700", "threeoneRet": "100", "directLimitRet": 800, "threeLimitRet": 150}, {"lotteryId": "99701", "lotteryName": "\\u516d\\u5408\\u5f69", "lotterySeriesCode": 9, "lotterySeriesName": "\\u516d\\u5408\\u7cfb", "awardGroupId": 202, "awardName": "\\u516d\\u5408\\u5f69\\u5956\\u91d1\\u7ec4", "directRet": "1390", "lhcFlatcode": "390", "lhcYear": "290", "lhcColor": "290", "lhcHalfwave": "290", "lhcOneyear": "190", "lhcNotin": "290", "lhcContinuein23": "290", "lhcContinuein4": "490", "lhcContinuein5": "490", "lhcContinuenotin23": "290", "lhcContinuenotin4": "490", "lhcContinuenotin5": "490", "lhcContinuecode": "490", "directLimitRet": 1400, "lhcYearLimit": 300, "lhcColorLimit": 300, "lhcFlatcodeLimit": 400, "lhcHalfwaveLimit": 300, "lhcOneyearLimit": 200, "lhcNotinLimit": 300, "lhcContinuein23Limit": 300, "lhcContinuein4Limit": 500, "lhcContinuein5Limit": 500, "lhcContinuenotin23Limit": 300, "lhcContinuenotin4Limit": 500, "lhcContinuenotin5Limit": 500, "lhcContinuecodeLimit": 500}, {"lotteryId": "99801", "lotteryName": "\\u51e4\\u51f0\\u5409\\u52293D", "lotterySeriesCode": 2, "lotterySeriesName": "3D\\u7cfb", "awardGroupId": 223, "awardName": "\\u5956\\u91d1\\u7ec41900", "directRet": "290", "threeoneRet": "290", "directLimitRet": 300, "threeLimitRet": 300, "sysAwardGroupExtraId": 34}, {"lotteryId": "99901", "lotteryName": "\\u5feb\\u5f00", "lotterySeriesCode": 11, "lotterySeriesName": "\\u9ad8\\u9891\\u5f69\\u7cfb", "awardGroupId": 238, "awardName": "\\u5956\\u91d1\\u7ec41800", "directRet": "190", "directLimitRet": 200}]
+                 ]
+                        }
+            domain_dict = {0: "http://www.dev02.com",
+                           1: "http:\\\\/\\\\/www2.joy188.com:888"
+                          }
+            OpenLink_data = {"type": 1, "days": -1, "infos":info_dict[envs][i],
+                            "memo": "autoTest", "setUp": 1,"domain": domain_dict[envs]}
+            param_data.update(OpenLink_data)
+            data_['body']['param'] = param_data
+            r = requests.post(env+'information/doRetSetting',data=json.dumps(data_),headers=App_header) 
+            if r.json()['head']['status'] == 0:
+                print('開戶連結創立成功')
+                data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"",
+                "sessionId":token_[user]},"body":{"param":{"CGISESSID":token_[user],"app_id":"10","come_from":"4",
+                "appname":"1"},"pager":{"startNo":"","endNo":""}}}                                                                                     
+
+                r = requests.post(env+'information/openLinkList',data=json.dumps(data_),headers=App_header) 
+                result = r.json()['body']['result']['list'][0]
+                #print(result)
+                regCode = result['regCode']#回傳開戶 的 id
+                new_token = result['urlstring'].split('token=')[1]#回傳 開戶 的token
+                exp = result['urlstring'].split('exp=')[1].split('&')[0]
+                pid = result['urlstring'].split('pid=')[1].split('&')[0]
+                token_result[i] = {'regCode': regCode ,'new_token':new_token,'exp': exp, 'pid':pid} 
+                
+                #token_result[i] 
+                print('%s 的 開戶連結'%user)
+                print("註冊連結: %s, 註冊碼: %s, 建置於: %s"%(result['urlstring'],result['regCode']
+                ,result['start']))
+            else:
+                print('創立失敗')
     @staticmethod
     def test_AppRegister():
         '''APP註冊'''
         #print(new_token)
         global AppRegister_user # 到時 會用這用戶 來綁銀行卡 ,安全問題/密碼
-        user = env_dict['一般帳號'][envs]
-        user_random = random.randint(1000,9999999)
-        account_dict = {0:'hsiehapp%s'%user_random,1:'kerrapp%s'%user_random}
-        AppRegister_user = account_dict[envs]
-        data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":""},
-        "body":{"param":{"token":new_token,"accountName":AppRegister_user,
-        "password":  loginpasssource,
-        "cellphone":"", "qqAccount":"","wechat":"","id":int(regCode),"exp":exp,"pid":int(pid),"qq":'',
-        "ip":"192.168.2.18","app_id":"10", "come_from":"4","appname":"1"},"pager":{"startNo":"","endNo":""}}} 
         
-        r = requests.post(env+'user/register',data=json.dumps(data_),headers=App_header) 
-        if r.json()['head']['status'] == 0:
-            print('%s 註冊成功, 上級用戶: %s'%(AppRegister_user ,user))
-        else:
-            print('註冊失敗')
+        for i in range(2):
+            if i ==0:
+                print('一般: ')
+                user = env_dict['一般帳號'][envs]
+                user_random = random.randint(1000,9999999)
+            else:
+                print('合營: ')
+                user = env_dict['APP合營'][envs]
+                user_random = random.randint(10,99999)
+            account_dict = {0:['hsiehapp%s'%user_random,'hsiehwinapp%s'%user_random],
+                            1:['kerrapp%s'%user_random,'kerrwinapp%s'%user_random]}
+            AppRegister_user = account_dict[envs][i]
+            data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":""},
+            "body":{"param":{"token": token_result[i]['new_token'],"accountName":AppRegister_user,
+            "password":  loginpasssource,"jointVenture": i,
+            "cellphone":"", "qqAccount":"","wechat":"","id":int(token_result[i]['regCode']),
+                    "exp":token_result[i]['exp'],"pid":int(token_result[i]['pid']),"qq":'',
+            "ip":"192.168.2.18","app_id":"10", "come_from":"4","appname":"1"},
+            "pager":{"startNo":"","endNo":""}}} 
+
+            r = requests.post(env+'user/register',data=json.dumps(data_),headers=App_header) 
+            if r.json()['head']['status'] == 0:
+                print('%s 註冊成功, 上級用戶: %s'%(AppRegister_user ,user))
+            else:
+                print('註冊失敗')
         login_data = Joy188Test3.Iapi_LoginData(username=AppRegister_user,uuid_=uuid,
-                                                passwd=loginpasssource)
+                                                passwd=loginpasssource,joint=1)
         r = requests.post(env+'front/login',data=json.dumps(login_data),headers= App_header)
         # 需登入新的用戶, 產生token ,後續綁卡 用
         token = r.json()['body']['result']['token']
@@ -2432,79 +2568,85 @@ class Joy188Test3(unittest.TestCase):
     
 
 
-# In[160]:
+# In[ ]:
 
 
-envs = 0
+envs = 1
 
 
-# In[118]:
+# In[ ]:
 
 
 Joy188Test.test_Login()
 
 
-# In[161]:
+# In[ ]:
 
 
 Joy188Test3.test_iapiLogin()
 
 
-# In[162]:
+# In[ ]:
+
+
+Joy188Test3.test_IapiPlanSubmit()
+
+
+# In[ ]:
+
+
+Joy188Test3.test_iapiSubmit()
+
+
+# In[ ]:
+
+
+Joy188Test.test_tranUser()
+
+
+# In[ ]:
 
 
 Joy188Test3.test_OpenLink()
 
 
-# In[167]:
+# In[ ]:
 
 
 Joy188Test3.test_AppRegister()
 
 
-# In[292]:
-
-
-Joy188Test.test_CancelOrder()
-
-
-# In[172]:
-
-
-Joy188Test3.test_IapiCardBind()
-
-
-# In[169]:
+# In[ ]:
 
 
 Joy188Test3.test_IapiSecurityPass()
 
 
-# In[168]:
+# In[ ]:
 
 
 Joy188Test3.test_IapiSecurityQues()
 
 
-# In[176]:
+# In[ ]:
 
 
 Joy188Test3.test_IapiLockCard()
 
 
-# In[387]:
+# In[ ]:
 
 
 Joy188Test.test_LotteryPlanSubmit()
 
 
-# In[316]:
+# In[ ]:
 
 
 Joy188Test.test_LotterySubmit()
 
 
-# In[322]:
+# In[ ]:
 
 
 if __name__ == '__main__':
@@ -2519,11 +2661,12 @@ if __name__ == '__main__':
     
 
 
-# In[177]:
+# In[ ]:
 
 
 #自動化測試報告
 envs = 1# 0 dev , 1 : 188
+env_name = {0: 'dev',1: '188' }
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     order_dict= {}# 存放 order_code 和 orderid
@@ -2538,7 +2681,7 @@ if __name__ == '__main__':
     ,Joy188Test2('test_safecenter'),Joy188Test2('test_bindcard'),Joy188Test2('test_bindcardUs')]
       
     app = [Joy188Test3('test_iapiLogin'),Joy188Test3('test_iapiSubmit'),
-           Joy188Test3('test_IapiCancelSubmit'),
+           Joy188Test3('test_IapiPlanSubmit'),Joy188Test3('test_IapiCancelSubmit'),
            Joy188Test3('test_OpenLink'),
            Joy188Test3('test_AppRegister'),
            Joy188Test3('test_IapiSecurityPass'),Joy188Test3('test_IapiSecurityQues'),
@@ -2568,7 +2711,7 @@ if __name__ == '__main__':
     runner = HTMLTestRunner.HTMLTestRunner(
             stream=fp,
             title=u'測試報告',
-            description=u'環境: %s '%post_url
+            description=u'環境: %s '%env_name[envs]
             )
     runner.run(suite)
     fp.close()
