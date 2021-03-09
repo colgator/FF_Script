@@ -1187,7 +1187,8 @@ class GameBox(FF_):
         {"13":{"member": {"username": username}}},
         {"14":{"ipAddress": "61.220.138.45","member": {"amount": amount,"username": username }}},
         {"15":{"birthDate": "1994-07-01","country": "china","email": "%s@asd.com"%username,"lang": "cs","member": {"username": username}}},
-        {"16":{"member": {"username": username}}}]
+        {"16":{"member": {"username": username}}},
+        {"17":{"member": {"username":username,"password":password,"user":username}}}]
         ],
         "login":["客戶/登入",
         "/api/member/login?agent_name=%s"%clientId,[
@@ -1208,7 +1209,8 @@ class GameBox(FF_):
         {"13":{"member": {"username": username}}},
         {"14":{"ipAddress": "61.220.138.45","member": {"amount": amount,"username": username }}},
         {"15":{"deviceId": "1","member": {"username": username}}},
-        {"16":{"member": {"username": username}}}]
+        {"16":{"member": {"username": username}}},
+        {"17":{"lang": "CNY","member": {"password": password, "username": username}}}]
         ],
         "freeLogin":["客戶/試玩登入",
         "/api/member/freeLogin?agent_name=%s"%clientId,[
@@ -1218,7 +1220,7 @@ class GameBox(FF_):
         {"7":{"deviceId": "4","lang":"cs","backUrl":"http:///www.baidu.com"}},
         {"8":{}},{"9":{}},{"10":{}},
         {"11":{"lang": "cs"}},
-        {"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}}]
+        {"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}},{"17":{}}]
         ],
         "update":["客戶/修改会员信息","/api/member/update?agent_name=%s"%clientId,[
         {"0":{"member": {"status": 1, "winLimit": 0,"password": password, "username":username }}}, 
@@ -1235,7 +1237,8 @@ class GameBox(FF_):
         {"13":{}},
         {"14":{}},
         {"15":{}},
-        {"16":{}}]
+        {"16":{}},
+        {"17":{}}]
         ],
         "balance":['客戶/获取会员余额接口',
         "/api/member/balance?agent_name=%s"%clientId,[
@@ -1255,7 +1258,8 @@ class GameBox(FF_):
         {"13":{"member": {"username": username,}}},
         {"14":{"member": {"username": username,}}},
         {"15":{"member": {"username": username,}}},
-        {"16":{"member": {"username": username,}}}]
+        {"16":{"member": {"username": username,}}},
+        {"17":{"member": {"username": username,}}}]
         ],
         "transfer":["客戶/会员存取款接口",
         "/api/member/transfer?agent_name=%s"%clientId,[
@@ -1275,7 +1279,8 @@ class GameBox(FF_):
         {"13":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
         {"14":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
         {"15":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
-        {"16":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}}]
+        {"16":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}},
+        {"17":{"billNo": '%s'%random.randint(1,1000000000),"member": {"amount":amount ,"username": username,}}}]
         ],
         "checkTransfer":["客戶/检查存取款操作是否成功",
         "/api/member/checkTransfer?agent_name=%s"%clientId,[
@@ -1293,14 +1298,15 @@ class GameBox(FF_):
         {"13":{}},
         {"14":{"billNo": bill_No,"member": {"username": username}}},
         {"15":{"billNo": bill_No,"member": {"username": username}}},
-        {"16":{"billNo": bill_No,"member": {"username": username}}}]
+        {"16":{"billNo": bill_No,"member": {"username": username}}},
+        {"17":{}}]
         ],
         "updateLimit":['客戶/修改会员限红组',
         "/api/member/updateLimit?agent_name=%s"%clientId,[
         {"0":{"member": {"username": username},"oddType": "A"}},
         {"1":{}},
         {"2":{"member": {"username": "testsz8"},"oddType": "260301"}},
-        {"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}}]
+        {"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}},{"17":{}}]
         ],
         "checkOnline":["客戶/查询玩家在线状态",
         "/api/member/checkOnline?agent_name=%s"%clientId,[
@@ -1309,11 +1315,11 @@ class GameBox(FF_):
         {"2":{}},
         {"3":{"member": {"username": username}}},
         {"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},
-        {"14":{"member": {"username": username}}},{"15":{}},{"16":{"member": {"username": username}}}]
+        {"14":{"member": {"username": username}}},{"15":{}},{"16":{"member": {"username": username}}},{"17":{}}]
         ],
         "onlineCount":['客戶/查询在线玩家数量','/api/member/onlineCount?agent_name=%s'%clientId,[
         {"0":{}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}}
-        ,{"15":{}},{"16":{}}]
+        ,{"15":{}},{"16":{}},{"17":{}}]
         ],
         "offline":['客戶/踢人','/api/member/offline?agent_name=%s'%clientId,[
         {"0":{"member": {"memberId":member_Id}}},
@@ -1329,7 +1335,8 @@ class GameBox(FF_):
         {"12":{}},
         {"13":{}},
         {"14":{"member": {"username": username}}},
-        {"15":{}},{"16":{"member": {"username": username}}}]
+        {"15":{}},{"16":{"member": {"username": username}}},
+        {"17":{"member": {"username": username}}}]
         ],
         "lockMember":['客戶/封鎖會員','/api/member/lockMember?agent_name=%s'%clientId,[
         {"0":{"member": {"password":password,"username": username}}},
@@ -1339,7 +1346,7 @@ class GameBox(FF_):
         {"6":{}},
         {"7":{"agentLogin": "amberdev","member": {"username": username}}},
         {"8":{"member": {"username": username}}},
-        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}}]
+        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}},{"17":{}}]
         ],
         "unlockMember":['客戶/解封鎖會員','/api/member/unlockMember?agent_name=%s'%clientId,[
         {"0":{"member": {"password":password,"username": username}}},
@@ -1349,11 +1356,11 @@ class GameBox(FF_):
         {"6":{}},
         {"7":{"agentLogin": "amberdev","member": {"username": username}}},
         {"8":{"member": {"username": username}}},
-        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}}]
+        {"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},{"14":{}},{"15":{}},{"16":{}},{"17":{}}]
         ],
         "onlineMember":['客戶/查询在线玩家','/api/member/onlineMember?agent_name=%s&page=1&size=100'%clientId,
         [{"0":{}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},{"5":{}},{"6":{}},{"7":{}},{"8":{}},{"9":{}},{"10":{}},{"11":{}},{"12":{}},{"13":{}},
-            {"14":{}},{"15":{}},{"16":{}}]
+            {"14":{}},{"15":{}},{"16":{}},,{"17":{}}]
         ],  
         "supplierGameFile":['上传三方游戏列表','/admin/config/supplierGameFile']
         }
@@ -1552,7 +1559,7 @@ client_type = {
 e308e3285e0eb54781b0ab29c2a95d544c64847c216c2f2b10a9e083de4506b0a901dac71651be86e680f5\
 f61c4a2fb1fbccaa56ce9d88715a8c",9:"",10:"DF0FAEB6171BDEF9",11:"fe9b68fca25f2fe2",12:"dbettest",
 13: "89CA25C2BA65AC9DD12E04BD66B6B467",14: "FB9EFF5983F0683F",15:"2RuIYUKYkWrWBnNG",
-    16: "5dfc2a02f995f9b94defc4ed2c5613e5"},
+    16: "5dfc2a02f995f9b94defc4ed2c5613e5",17:"07f96e685a9f7252ebb001bca52a14a4"},
 "api_url":
     {0: "https://api.dg99web.com",1:"http://tsa.l0044.xtu168.com",
 2:"https://testapi.onlinegames22.com",3:"http://api.cqgame.games",4:"http://gsmd.336699bet.com",
@@ -1561,21 +1568,21 @@ f61c4a2fb1fbccaa56ce9d88715a8c",9:"",10:"DF0FAEB6171BDEF9",11:"fe9b68fca25f2fe2"
 9:"http://operatorapi.staging.imaegisapi.com",10:'https://api.cp888.cloud',11:"http://api.jygrq.com",
 12:"https://linkapi.bbinauth.net/app/WebService/JSON/display.php",13:"https://api.0x666666.com",
 14: "https://wc-api.hddv1.com/channelHandle",15:"https://marsapi-test.oriental-game.com:8443",
-    16: "http://tapi.aiqp001.com:10018/"},
+    16: "http://tapi.aiqp001.com:10018/",17:"https://api.a45.me/api/public/Gateway.php"},
 "supplier_type":
     {0:"dream_game",1:"sa_ba_sports",2: "ae_sexy",3:"cq_9",4:"gpi",5:"ya_bo_live",6:"pg_game",
 7:{"game":"bg_game","fish":'bg_fishing','chess':'bg_chess','lottery':'bg_lottery'},
 8:"tf_gaming",9:"im_sb",10: "ya_bo_lottery",11: "jdb_electronic",
-12: "bb_in",13:"yx_game",14: "ky_chess",15: "og_live", 16: "ace_poker"},
+12: "bb_in",13:"yx_game",14: "ky_chess",15: "og_live", 16: "ace_poker",17:"wm_live"},
 "supplier_user":
 {0: "DGTE01011T",1: "6yayl95mkn",2: "fhlmag",3: "cq9_test",4: "xo8v",5: "ZSCH5",
  6: "aba4d198602ba6f2a3a604edcebd08f1",7:"am00",8:"711",9:"OPRikJXEbbH36LAphfbD5RXcum6qifl8",
- 10:"fhagen",11:"XT",12: "test",13: "FH",14: "72298",15: "mog251sy",16: "1334"}# DB 裡 client_id
+ 10:"fhagen",11:"XT",12: "test",13: "FH",14: "72298",15: "mog251sy",16: "1334",17:"wmtesttwapi"}# DB 裡 client_id
 }
 
 env = 1 #環境變數  0 測試區 或1 灰度
 # 0 : DG , 1: 沙巴 ,2: sexy, 3 : cq9 , 4: gpi,5: YB,6: PG, 7:bg ,8: tfGaming,9: imSb ,10: ya_bo_lottery
-#11: JDB , 12: bbin 13: yx_game ,14: ky , 15 : og真人 , 16: acepoker
+#11: JDB , 12: bbin 13: yx_game ,14: ky , 15 : og真人 , 16: acepoker , 17: wm_live
 client_env = 16
 
 clientId = client_type["supplier_user"][client_env]# agent_name 商戶 ,gamebox預設 : DGTE01011T , 沙巴: 
