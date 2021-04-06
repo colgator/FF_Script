@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[114]:
+# In[ ]:
 
 
 #coding=utf-8
-import requests,hashlib,types,json,threading,time,unittest,re,datetime,cx_Oracle,sys,redis,random,urllib3,os
+import requests,hashlib,types,json,threading,time,unittest,re,datetime,cx_Oracle,sys,redis,random
+import urllib3,os,urllib
 import requests,twstock
 from bs4 import BeautifulSoup
 from time import sleep,ctime
@@ -25,6 +26,17 @@ from functools import wraps
 from ddt import ddt,data,unpack
 import HTMLTestRunner
 from functools import reduce
+import itertools
+
+
+# In[ ]:
+
+
+req = urllib.request.Request('http://www.pretend_server.org')
+try:
+    urllib.request.urlopen(req)
+except urllib.error.URLError as e:
+    print('e.code 訊息:  %s  ,  e的訊息: %s'%(e.code,e))  
 
 
 # In[ ]:
@@ -39,22 +51,7 @@ from IPython.display import clear_output as clear
 'ipykernal' in sys.modules
 
 
-# In[210]:
-
-
-
-te = {''}
-te.add('123')
-len(te)
-
-
-# In[440]:
-
-
-return_NewCount(['56789', '45678', '01234', '0123456789'])
-
-
-# In[379]:
+# In[ ]:
 
 
 def return_NewCount(list_):# list_ 為所有的組合list  ,該方法 產生新的去重組和
@@ -74,7 +71,7 @@ def return_NewCount(list_):# list_ 為所有的組合list  ,該方法 產生新�
     print('去重後的注數: %s'%new_len)
 
 
-# In[391]:
+# In[ ]:
 
 
 def return_ListLen(list_,len_list):# 計算 排列組和 的 陣列
@@ -108,7 +105,7 @@ def return_ListLen(list_,len_list):# 計算 排列組和 的 陣列
             
 
 
-# In[513]:
+# In[ ]:
 
 
 fir_elen = "0123456"
@@ -118,7 +115,7 @@ itertools.combinations(fir_elen,len_play)] ]
 print(len(test))
 
 
-# In[518]:
+# In[ ]:
 
 
 tes_list= ['0,1,2,3,4,5,6,7,8,9', '0,2,4,6,8', '1,3,5,7,9', '0,1,2,3,4', '5,6,7,8,9']
@@ -128,14 +125,14 @@ b = dict(Counter(new_list))
 print(b)
 
 
-# In[530]:
+# In[ ]:
 
 
 a = '0123456789,0'
 ''.join(a).split(',')
 
 
-# In[615]:
+# In[ ]:
 
 
 a = ['0123456789']
@@ -144,7 +141,7 @@ itertools.combinations(a[0],2)] ]
 print(len(test))
 
 
-# In[617]:
+# In[ ]:
 
 
 
@@ -232,7 +229,7 @@ def return_zhuP(type_):
 return_zhuP('52')
 
 
-# In[398]:
+# In[ ]:
 
 
 test = []
@@ -249,14 +246,14 @@ for bet_detail in  ['45,0,5,7,1', '5,0,5,7,1']:
 return_NewCount(test)# 再將陣列 回傳到 return_NewCount 方法, 確認是否有同期 同玩法, 去重號碼
 
 
-# In[383]:
+# In[ ]:
 
 
 a = ('0', '1')
 "".join(list(a))
 
 
-# In[556]:
+# In[ ]:
 
 
 len_play = 3
@@ -266,10 +263,10 @@ itertools.combinations(str_,len_play)] ]
 print(a,len(a))
 
 
-# In[377]:
+# In[ ]:
 
 
-from itertools import permutations
+import itertools
 
 # str_ 為 完法後的序列, ex前二 帶五 = 012345, 
 #len_play為 玩法長度, ex前二 帶2 , 
@@ -304,62 +301,14 @@ def return_P(str_,cal_,play_type,game_type):
         for b in i:
             sum_ += int(b)
         #print(sum_)
+        if game_type == '11':#  組選 要過濾掉 三哥號碼重複的 ex : 222
+            if i.count(b) == len_play:
+                sum_ =0
         if sum_ == cal_:
             new_list.append(i)# 加起來為指定數值
     #print(new_list)
     print('共 %s 注'%len(new_list))# 
-    return new_list
-# cal 就是頁面的投注選項
-return_P(str_='0123456789',cal_= 2 ,play_type='12',game_type = '11')#game_type =[组选 ,直选 ]
-
-
-# In[426]:
-
-
-a = '5,6,7,8,9'
-a.replace(',','')
-
-
-# In[432]:
-
-
-'56789' in  '0123456789'
-
-
-# In[443]:
-
-
-a = ['5,6,7,8,9', '4,5,6,7,8', '0,1,2,3,4', '0,1,2,3,4,5,6,7,8,9']
-
-b = [i.replace(',','') for i in a]# ['56789', '45678', '01234', '0123456789']
-print(b)
-b.sort(key=lambda i :len(i),reverse=True)
-print(type(b))
-fir_elen = b[0]# 先用sort 長度 最長為第一原素 ,後面 元素判斷是否友包含在裡面
-exist_list = []
-
-for index,ele in enumerate(b):
-    if index == 0:
-        pass
-    else:
-        if ele in fir_elen:
-            print('%s 元素已經存在'%ele)
-            exist_list.append(ele)
-print(exist_list)
-#b = set(b)
-
-
-
-# In[441]:
-
-
-a = ['56789', '45678', '01234', '0123456789']
-a.count('56789')
-
-
-# In[376]:
-
-
+    return new_list,len(new_list)
 #bet_list 為投注號碼列表
 def return_Deduplica(BetDetailList,bet_type_code):# bet_type_code 傳  ex: 33_10_33
     new_list = []
@@ -400,21 +349,9 @@ def return_Deduplica(BetDetailList,bet_type_code):# bet_type_code 傳  ex: 33_10
     #new_list.append(('0', '8'))
     print(new_list)
     return_NewCount(new_list)
-return_Deduplica(BetDetailList=['9,10', '10,11', '10,11,12'],bet_type_code='12_10_33')
 
 
-# In[ ]:
-
-
-a = ['0', '1', '2', '3', '4', '5']
-for q in a[0]:
-    for w in a[1]:
-        for e in a[2]:
-            for r in a[3]:
-                for t in a[4]
-
-
-# In[479]:
+# In[66]:
 
 
 #ipynb檔  轉成 python檔
@@ -426,34 +363,38 @@ def IpynbToPython():
 IpynbToPython()
 
 
-# In[516]:
+# In[ ]:
 
 
-FF_().user_agent['Pc']
+lottery_dict = {
+'cqssc':[u'重慶','99101'],'xjssc':[u'新彊時彩','99103'],'tjssc':[u'天津時彩','99104'],
+'hljssc':[u'黑龍江','99105'],'llssc':[u'樂利時彩','99106'],'shssl':[u'上海時彩','99107'],
+'jlffc':[u'吉利分彩','99111'],'slmmc':[u'順利秒彩','99112'],'txffc':[u'騰訊分彩','99114'],
+'btcffc':[u'比特幣分彩','99115'],'fhjlssc':[u'吉利時彩','99116'],
+'sd115':[u'山東11選5','99301'],'jx115':[u"江西11選5",'99302'],
+'gd115':[u'廣東11選5','99303'],'sl115':[u'順利11選5','99306'],'jsk3':[u'江蘇快3','99501'],
+'ahk3':[u'安徽快3','99502'],'jsdice':[u'江蘇骰寶','99601'],'jldice1':[u'吉利骰寶(娛樂)','99602'],
+'jldice2':[u'吉利骰寶(至尊)','99603'],'fc3d':[u'3D','99108'],'p5':[u'排列5','99109'],
+'lhc':[u'六合彩','99701'],'btcctp':[u'快開','99901'],'pk10':[u"pk10",'99202'],'v3d':[u'吉利3D','99801'],
+'xyft':[u'幸運飛艇','99203'],'fhxjc':[u'鳳凰新疆','99118'],'fhcqc':[u'鳳凰重慶','99117'],
+'n3d':[u'越南3d','99124'],'np3':[u'越南福利彩','99123'],'pcdd':[u'PC蛋蛋','99204'],
+    'xyft168':[u'幸運飛艇168','99205'], 'fckl8':[u'福彩快樂8','99206'],'ptxffc':[u'奇趣腾讯分分彩','99125']
+            ,'hn60':[u'多彩河内分分彩','99126'],'hnffc':[u'河内分分彩','99119'],'hn5fc':[u'河内五分彩'
+            ,'99120']}
+lottery_sh = ['cqssc','xjssc','tjssc','hljssc','llssc','jlffc','slmmc','txffc',
+            'fhjlssc','btcffc','fhcqc','fhxjc','hnffc','hn5fc','hn60','ptxffc']
+lottery_3d = ['v3d']
+lottery_115 = ['sd115','jx115','gd115','sl115']
+lottery_k3 = ['ahk3','jsk3']
+lottery_sb = ['jsdice',"jldice1",'jldice2']
+lottery_fun = ['pk10','xyft','xyft168']
+lottery_noRed = ['fc3d','n3d','np3','p5']#沒有紅包
+third_list = ['gns','shaba','im','ky','lc','city','bg','yb','pg']
+cancel_lottery_list = ['cqssc','xjssc','tjssc','hljssc','fhjlssc','xyft','pk10','fc3d',
+                 'p5','n3d','np3']# 撤消彩種
 
 
-# In[525]:
-
-
-FF_().test_request(data='',env_url='http://www.dev02.com',func_url='/login',user= ''
-             ,req_type='get',req_header= {'User-Agent':FF_().user_agent['Pc']})
-
-
-# In[530]:
-
-
-threads = []
-for i in range(100):
-    t = threading.Thread(target=FF_().test_request,args=('','http://www.dev02.com',
-                '/login','' ,'get',{'User-Agent':FF_().user_agent['Pc']}))
-    threads.append(t)
-for i in threads:
-    i.start()
-for i in threads:
-    i.join()
-
-
-# In[696]:
+# In[ ]:
 
 
 class FF_(): #4.0專案
@@ -597,6 +538,8 @@ class FF_(): #4.0專案
                 lottery_dict[index].append(con[1])
             return lottery_dict
         print('lottery_dict')
+    def select_AveOrder():
+        pass
         
     def select_issue(self,conn,lottery,type_):#查詢正在銷售的 期號 ,lotttery參數,對應 lotteryid
         #today_time = '2019-06-10'#寫死 for預售中
@@ -882,7 +825,857 @@ class App(FF_):
             print('投注失敗,待確認')
 
 
-# In[37]:
+# In[ ]:
+
+
+session = FF_().session
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+class Joy188Test:
+    submit_inf = {}
+    store_ball = {}#key 為期號 value 存放  ball_dict
+    ball_dict = {}
+    def web_issuecode(lottery,account):#頁面產生  獎期用法,  取代DB連線問題
+        now_time = int(time.time())
+        Pc_header['Cookie']= 'ANVOID='+ FF_().cookies[account]
+        try:
+            if lottery == 'lhc':
+                r = session.get(em_url+'/gameBet/lhc/dynamicConfig?_=%s'%(now_time),headers=Pc_header)
+                issuecode = r.json()['data']['issueCode']
+            else:
+                r = session.get(em_url+'/gameBet/%s/lastNumber?_=%s'%(lottery,now_time),
+                                headers=Pc_header)
+                issuecode = r.json()['issueCode']
+            return issuecode
+        except :
+            print("%s採種沒抓到 獎號"%lottery)
+    def select_SlipBall(conn,lotteryid):# 從還沒開獎的 其號抓出 頭注記錄, 用來分析用 
+        with conn.cursor() as cursor:
+            sql = "select ISSUE_CODE,bet_detail from game_slip  where lotteryid = %s              and  CREATE_TIME > to_date(trunc(sysdate,'DD'))  and STATUS = 1             order by ISSUE_CODE desc"%lotteryid
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            global number_record
+            number_record = defaultdict(list)
+
+            for i in rows:
+                number_record[i[0]].append(i[1])
+        conn.close()
+    def random_mul(num):#生成random數, NUM參數為範圍
+        return(random.randint(1,num))
+
+
+    def plan_num(envs,lottery,plan_len):#追號生成
+        plan_ = []#存放 多少 長度追號的 list
+        Joy188Test.select_issue(Joy188Test.get_conn(envs),lottery_dict[lottery][1])
+        for i in range(plan_len):
+            plan_.append({"number":issueName[i],"issueCode":issue[i],"multiple":1})
+        return plan_
+    def count_listNum(count_dict,number_str): # 號碼個數 的計算
+    #global count_dict
+        for str_b in number_str:
+            for i in range(10):
+                count_ = str_b.count(str(i))
+                if str(i) in count_dict.keys():
+                    count_dict[str(i)] = count_ + count_dict[str(i)]
+                else:
+                    count_dict[str(i)] = count_
+        return count_dict
+    def tran_ball(play_type1, ball_list):# 把 陣列的球 跟去 玩法, 轉成 特的號碼球 存在 store_ball
+        if len(ball_list) ==  5 :# 複試
+            if play_type1 == 'wuxing':
+                    store_ball = "".join(ball_list)
+            elif play_type1 == 'sixing':
+                store_ball = "".join(ball_list)[1:5]
+            elif play_type1 == 'qiansan':
+                store_ball = "".join(ball_list)[0:3]
+            elif play_type1 == 'housan':
+                store_ball = "".join(ball_list)[2:5]
+            elif play_type1 == 'zhongsan':
+                store_ball = "".join(ball_list)[1:4]
+            elif play_type1 == 'houer':
+                store_ball = "".join(ball_list)[3:5]
+            elif play_type1  == 'qianer':
+                store_ball = "".join(ball_list)[0:2]
+            else:
+                print('玩法名稱請確認')
+                return ''
+        else:
+            store_ball = "".join(ball_list)
+        return store_ball
+    def return_CouNum(store_ball,random_num):
+        
+        countNum_dict = {}  # key 0 是萬, 1 千  2,3,4  百十各
+        five_str = ""
+        four_str = ""
+        three_str = ""
+        two_str = ""
+        one_str = ""
+        for play_name in store_ball.keys():
+            if 'fushi' in play_name:
+                if 'wuxing' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                five_str = five_str + str_
+                            elif index ==1:
+                                four_str  = four_str  + str_
+                            elif index == 2:
+                                three_str  = three_str  + str_
+                            elif index == 3:
+                                two_str  = two_str + str_
+                            elif index == 4:
+                                one_str = one_str + str_
+                elif 'sixing' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                four_str  = four_str  + str_
+                            elif index ==1:
+                                three_str  = three_str  + str_
+                            elif index == 2:
+                                two_str  = two_str + str_
+                            elif index == 3:
+                                one_str = one_str + str_
+                elif 'qiansan' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                five_str = five_str + str_
+                            elif index ==1:
+                                four_str  = four_str  + str_
+                            elif index == 2:
+                                three_str  = three_str  + str_
+                elif 'zhongsan' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                four_str  = four_str  + str_
+                            elif index ==1:
+                                three_str  = three_str  + str_
+                            elif index == 2:
+                                two_str  = two_str + str_
+                elif 'housan' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                three_str  = three_str  + str_
+                            elif index ==1:
+                                two_str  = two_str + str_
+                            elif index == 2:
+                                one_str = one_str + str_
+                elif 'qianer' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                five_str = five_str + str_
+                            elif index ==1:
+                                four_str  = four_str  + str_
+                elif 'houer' in play_name:
+                    for number in store_ball[play_name]:
+                        for index,str_ in enumerate(number):
+                            #print(index,str_)
+                            if index == 0:
+                                two_str  = two_str + str_
+                            elif index ==1:
+                                one_str = one_str + str_     
+            else:
+                return Joy188Test.return_randomFushi(),{}
+        for index,str_ in enumerate([five_str,four_str,three_str,two_str,one_str]):
+            count_dict = {}
+            number_count = Joy188Test.count_listNum(count_dict,str_ )
+            number_sort = dict(sorted(number_count.items()  ,key= lambda item : item[1]))
+            countNum_dict[index] = number_sort
+        number = ""
+        for key in countNum_dict.keys():
+            if len(list(countNum_dict[key].keys())) == 0:# 一開始沒有 五星/四球的球  會爆錯  需多判斷長度
+                number  = number  + str(random.randint(0,9))
+            else:
+                number  = number  + list(countNum_dict[key].keys())[random.randint(0,random_num)]
+        print(countNum_dict)
+        print('生成最少的號碼球: %s'%number)
+        return number,countNum_dict
+    def return_randomFushi():
+        ball_list = [str(random.randint(0,9)) for i in range(5)]
+        ball = "".join(ball_list)
+        return ball
+    def list_minus(A_list,B_list): #兩個列表長度相減  , 參數一 減到 參數二
+        from collections import OrderedDict
+        d_set = OrderedDict.fromkeys(A_list)
+        for x in B_list:
+            if x in A_list:
+                try:
+                    del d_set[x]
+                except:
+                    pass
+        A = list(d_set.keys())
+        return A
+
+    def cal_ball(lotteryid,play_type1,play_type2,play_type3): #計算當期投注的內容,選擇出 最少號碼的球
+        count_dict = {}
+        play_name = '%s-%s-%s'%(play_type1,play_type2,play_type3)
+        Joy188Test.select_SlipBall(FF_().get_conn(1),lotteryid)# 去要目錢當期 的投注內容 ,產出number_record , key是旗號
+        '''
+        num 為1的用意 , random_fushi 區別 ,否則 會有一張注單 相同號碼
+        '''
+        print(len(number_record), len(Joy188Test.store_ball)   )
+        #print(number_record)
+
+        if  len(number_record) ==  0  :#該期還沒人頭注 和 本期還沒有號碼球產生
+            ball = Joy188Test.return_randomFushi()# 隨機 五球的 str
+            if play_type1 == 'wuxing':
+                ball_list = [i for i in ball ]#五星都是數值
+            elif play_type1 == 'sixing':
+                ball_list= ['-' if index ==0  else i  for index,i in enumerate(ball)]
+            elif play_type1 == 'qiansan':
+                ball_list= ['-' if index  in[3,4]  else i  for index,i in enumerate(ball)]
+            elif play_type1 == 'housan':
+                ball_list = ['-' if index  in [0,1]  else i  for index,i in enumerate(ball)]
+            elif play_type1 == 'zhongsan':
+                ball_list = ['-' if index in[0,4]  else i  for index,i in enumerate(ball) ]
+            elif  play_type1  == 'houer':
+                ball_list = ['-' if index in [0,1,2] else i  for index,i in enumerate(ball)]
+            elif  play_type1  == 'qianer':
+                ball_list  = ['-' if index in [2,3,4] else i  for index,i in enumerate(ball)]
+            else:
+                print('玩法名稱請確認')
+                ball_list = ['']
+            print(ball_list)
+            store_ball = Joy188Test.tran_ball( play_type1   ,ball_list)# 轉格式
+            #print(len(number_record), len(Joy188Test.ball_dict))
+            print('當期game_slip沒投注內容,產生  隨機球:%s '%store_ball)
+            
+        else:
+            issuecode = list(number_record.keys())[0]
+            print(len(number_record[issuecode]))
+            if len(number_record[issuecode]) < 10:
+                print('從game_slip 抓取投注內容 隨機生成最少號碼')
+                for record   in number_record.values():# 抓取 game_slip當期有的投注內容
+                    number_count = Joy188Test.count_listNum(count_dict ,record)# 計算 個數 方法
+                number_sort = dict(sorted(number_count.items()  ,key= lambda item : item[1]))# 號碼個數 排序(小到大)
+                print(number_sort)
+                list_numberSort = list(number_sort.keys())[:5]
+                '''
+                list_numberSort算出前五個數量最小的陣列,
+                在去放到List裡面做隨機拿出 ex: [1,2,3,4,5] 拿出來可能是 [11234]
+                '''
+                ran_ball = [list_numberSort[random.randint(0,len(list_numberSort )-1)] for i in range(5)]
+                ball = "".join(ran_ball)# str: "12345" 前面五個最小的字串
+                #store_ball = Joy188Test.tran_ball( play_type1 ,ran_ball)# 5個號碼 轉格是 ex: '---51'
+                store_ball = Joy188Test.tran_ball( play_type1   ,ball)# 轉格式
+            else:
+                print('從各位元 裡面抓最少的球')
+                print(Joy188Test.store_ball)
+                ball = Joy188Test.return_CouNum(Joy188Test.store_ball,3)[0]
+                store_ball = Joy188Test.tran_ball( play_type1   ,ball)# 轉格式
+            try:
+                num = 0
+                while True:
+                    if num == 2:
+                        print('已經要地5次, 不再重新要 ')
+                        break
+                    elif store_ball in Joy188Test.ball_dict[issuecode][play_name]:
+                        num += 1
+                        print(num)
+                        print('完法: %s 號碼球: %s 已經存在'%(play_name,store_ball))
+                        ball = Joy188Test.return_CouNum(Joy188Test.store_ball,5)[0]
+                        store_ball = Joy188Test.tran_ball( play_type1   ,ball)# 轉格式
+                        print('重新要號碼球: %s'%store_ball)
+                    else:
+                        break
+            except:
+                pass
+            
+            print('完法 :%s 號碼: %s 將存入 站存'%(play_name,store_ball))
+            
+            #這邊底下的ball 需是 完整的五個號碼, 不做- 處的的str
+            if  play_type1  == 'wuxing':
+                ball_list =  [i for index,i in enumerate(ball)]
+            elif  play_type1  == 'sixing':
+                ball_list = ['-' if index in [0]  else i for index,i in enumerate(ball)]
+            elif  play_type1  == 'qiansan':
+                ball_list = ['-' if index in [3,4]  else i for index,i in enumerate(ball)]
+            elif  play_type1  == 'housan':
+                ball_list = ['-' if index in [0,1]  else i for index,i in enumerate(ball)]
+            elif  play_type1  == 'zhongsan':
+                ball_list = ['-' if index in [0,4]  else i for index,i in enumerate(ball)]
+            elif  play_type1  == 'houer':
+                ball_list = ['-' if index in [0,1,2]  else i for index,i in enumerate(ball)]
+            elif  play_type1  == 'qianer':
+                ball_list = ['-' if index in [2,3,4]  else i for index,i in enumerate(ball)]
+            else:
+                print('玩法名稱請確認')
+                ball_list = ['']
+            print('找尋最低號碼分布')
+            '''
+            ball算出前五個數量最小,在去放到List裡面做隨機拿出 ex: [1,2,3,4,5] 拿出來可能是 [11234]
+            '''
+        
+        Joy188Test.store_ball.setdefault( play_name,[]).append(store_ball)
+        #print(Joy188Test.store_ball)
+        
+        return ball_list
+
+    def play_type(lottery,game_type1,game_type2,game_type3):#隨機生成  group .  五星,四星.....
+        game_group = {'wuxing':{'zhixuan':['fushi'],
+        'zuxuan':['zuxuan120','zuxuan60','zuxuan30','zuxuan20','zuxuan10','zuxuan5'],
+        'budingwei':['ermabudingwei','sanmabudingwei'],
+        'quwei':['yifanfengshun','haoshichengshuang','sanxingbaoxi','sijifacai']},
+            'sixing': {'zhixuan':['fushi'],
+        'zuxuan':['zuxuan24','zuxuan12','zuxuan6','zuxuan4'],
+        'budingwei':['ermabudingwei','yimabudingwei']},
+            'qiansan': {'zhixuan':['fushi','hezhi','kuadu'],
+         'zuxuan':['hezhi','baodan','zusan','zuliu'],
+        'budingwei':['ermabudingwei','yimabudingwei']},
+             'housan': {'zhixuan':['fushi','hezhi','kuadu'],
+        'zuxuan':['hezhi','baodan','zusan','zuliu'],
+        'budingwei':['ermabudingwei','yimabudingwei']},
+            'zhongsan': {'zhixuan':['fushi','hezhi','kuadu'],
+        'zuxuan':['hezhi','baodan','zusan','zuliu'],
+        'budingwei':['ermabudingwei','yimabudingwei']},
+             'qianer': {'zhixuan':['fushi','hezhi','kuadu'],
+        'zuxuan':['hezhi','baodan','fushi']},
+            'houer':{'zhixuan':['fushi','hezhi','kuadu'],
+        'zuxuan':['hezhi','baodan','fushi']} 
+                     }
+        if lottery == "ptxffc":# 奇趣 沒有五星
+            del game_group['wuxing']
+            num = 5
+        elif lottery == 'btcctp':
+            game_group = {'chungtienpao':'冲天炮'}
+            num = 0
+        elif lottery in lottery_fun:
+            game_group = {'guanya':'冠亞','guanyaji': '冠亞季' , 'qiansi':'前四', 'qianwu':'前五'}
+            num = 3
+        elif lottery == 'jlffc':
+            num = 6
+            if game_type1 == ''and game_type2 =='' and game_type3 =='':# 全部隨機
+                play_key1 = list(game_group.keys())[random.randint(0,num)]# 隨機生成 game_group 的key  五星/四星....
+                len_playKey1 = len(game_group[play_key1])# 五星 當key, 取得的 value
+                play_key2 = list(game_group[play_key1].keys())[random.randint(0,len_playKey1-1 )]#wuxing 到時需到  play_key
+                len_playKey2 = len(game_group[play_key1][play_key2])# 取得五星 某個玩法的長度,ex 五星組選
+                play_key3 = game_group[play_key1][play_key2 ][random.randint(0,len_playKey2 -1 )]
+            elif game_type1 != ''and game_type2 !='' and game_type3 !='':# 全部指定
+                play_key1 = game_type1
+                play_key2 = game_type2
+                play_key3 = game_type3
+            elif game_type1 != ''and game_type2 =='' and game_type3 =='':# 五星/四星 指定
+                play_key1 = game_type1
+                len_playKey1 = len(game_group[play_key1])# 五星 當key, 取得的 value
+                play_key2 = list(game_group[play_key1].keys())[random.randint(0,len_playKey1-1 )]#wuxing
+                len_playKey2 = len(game_group[play_key1][play_key2])# 取得五星 某個玩法的長度,ex 五星組選
+                play_key3 = game_group[play_key1][play_key2 ][random.randint(0,len_playKey2 -1 )]
+            else:
+                if game_type2 == "": #中間隨機
+                    play_key3 = game_type3
+                    if game_type3 == 'fushi': # 直選/組選  複試
+                        if game_type1 == '':# 隨機
+                            play_list = ['wuxing','sixing','houer','qianer','zhongsan','qiansan',
+                                         'housan','qianer','houer']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_list = ['zhixuan','zuxuan']
+                        play_key2 = play_list[random.randint(0,len(play_list)-1)]
+                    elif game_type3 == 'kuadu':
+                        if game_type1 == '':
+                            play_list = ['houer','qianer','zhongsan','qiansan','housan']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_key2 = 'zhixuan'
+                    elif game_type3 in ['yimabudingwei','ermabudingwei']:
+                        if game_type1 == '': 
+                            play_list = ['sixing','zhongsan','qiansan','housan']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_key2 = 'budingwei'
+                    elif game_type3 == 'hezhi':# 直選和值 或者組選和值
+                        if game_type1 == '': 
+                            play_list = ['zhongsan','qiansan','housan','qianer','houer']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_list = ['zhixuan','zuxuan']
+                        play_key2 = play_list[random.randint(0,len(play_list)-1)]
+
+                else:# 中間有待 值
+                    play_key2 = game_type2
+                    if game_type2 == 'budingwei':
+                        if game_type1 == '':#沒有待五星/四星 ,就是隨機
+                            play_list = ['sixing','zhongsan','qiansan','housan']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_list = game_group[play_key1]['budingwei']
+                        play_key3 = play_list[random.randint(0,len(play_list)-1)]
+                    elif game_type2 == 'zhixuan':#直選
+                        if game_type1 == '':
+                            play_list = ['wuxing','sixing','houer','qianer','zhongsan','qiansan',
+                                             'housan','qianer','houer']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_list = game_group[play_key1]['zhixuan']
+                        play_key3 = play_list[random.randint(0,len(play_list)-1)]
+                    elif game_type2 == 'zuxuan':# 組選
+                        if game_type1 == '':
+                            play_list = ['wuxing','sixing','qiansan','housan','zhongsan']
+                            play_key1 = play_list[random.randint(0,len(play_list)-1)]
+                        else:
+                            play_key1 = game_type1
+                        play_list = game_group[play_key1]['zuxuan']
+                        play_key3 = play_list[random.randint(0,len(play_list)-1)]
+                    elif game_type2 == 'quwei':
+                        play_key1 = 'wuxing'
+                        play_list = game_group['wuxing']['quwei']
+                        play_key3 = play_list[random.randint(0,len(play_list)-1)]
+                        
+    
+            #print(play_key1+play_key2+play_key3)
+            return play_key1,play_key2,play_key3
+        else:
+            num = 6
+        play_key = list(game_group.keys())[random.randint(0,num)]
+        return play_key
+    def list_Transtr(ball_list):
+        a = (",".join(ball_list))
+        return a
+
+    def random_ball(num):# 這個是給list裡面不能重號號碼球的, 比如組選
+        ball = []
+        range_ball = [str(i) for i in range(0,10)]
+        for i in range(num):
+            len_range = len(range_ball)
+            ball_ = range_ball[random.randint(0,len_range-1)]
+            ball.append(ball_)
+            range_ball.remove(ball_)
+        return ball
+    def ball_type(play_type1, play_type2,play_type3):#對應完法,產生對應最大倍數和 投注完法
+        #  (Joy188Test.random_mul(9)) 隨機生成 9以內的數值
+        play_num  = 1
+        if play_type1 == 'wuxing':
+            mul = Joy188Test.random_mul(10)
+            if play_type3 == 'fushi':
+                ball = Joy188Test.cal_ball(99111,play_type1,play_type2,play_type3)
+                mul = 1
+            elif play_type3 == 'zuxuan120':
+                ball = Joy188Test.random_ball(5)
+            elif play_type3== 'zuxuan60':
+                ball = Joy188Test.random_ball(4)
+                ball = ['%s,%s%s%s'%(ball[0],ball[1],ball[2],ball[3])]
+            elif play_type3 == 'zuxuan30':
+                ball = Joy188Test.random_ball(3)
+                ball = ['%s%s,%s'%(ball[0],ball[1],ball[2])]
+            elif play_type3 == 'zuxuan20':
+                ball = Joy188Test.random_ball(3)
+                ball = ['%s,%s%s'%(ball[0],ball[1],ball[2])]
+            elif play_type3 in ['zuxuan10','zuxuan5','ermabudingwei']:
+                ball = Joy188Test.random_ball(2)
+                ball = ['%s,%s'%(ball[0],ball[1])]
+            elif play_type3 == 'sanmabudingwei':
+                #mul = random.randint(100,1000)
+                ball = Joy188Test.random_ball(3)
+                ball = ['%s,%s,%s'%(ball[0],ball[1],ball[2])]
+            else:
+                ball  = [str(Joy188Test.random_mul(9)) ]
+        elif play_type1 == 'sixing':
+            mul = Joy188Test.random_mul(22)
+            if play_type3== 'fushi':
+                mul = 1
+                ball = Joy188Test.cal_ball(99111,play_type1,play_type2,play_type3)
+                #ball = ['-' if i ==0  else str(Joy188Test.random_mul(9)) for i in range(5)]#第一個為-
+            elif play_type3 == 'zuxuan24':
+                ball = Joy188Test.random_ball(4)
+            elif play_type3 == 'zuxuan12':
+                ball = Joy188Test.random_ball(4)
+                ball = ['%s,%s%s'%(ball[0],ball[1],ball[2])]
+                print(ball)
+            elif play_type3 in ['zuxuan6','zuxuan4','ermabudingwei']:
+                ball = Joy188Test.random_ball(2)
+                ball = ['%s,%s'%(ball[0],ball[1])]
+            else:
+                #mul = random.randint(100,1000)
+                ball = [str(Joy188Test.random_mul(9)) ]
+        elif play_type1  in ['housan','qiansan','zhongsan']:
+            #mul = Joy188Test.random_mul(22)
+            if play_type3 == 'fushi':
+                mul = 1
+                ball = Joy188Test.cal_ball(99111,play_type1,play_type2,play_type3)
+            elif play_type3 == 'hezhi':#和值
+                play_dict = {'housan': '13', 'qiansan': '12', 'zhongsan': '33'}
+                if play_type2== 'zhixuan':# 直選 ,先寫死 ball, 因為直選和值 注數會因為投注內容改變
+                    ball = [str(random.randint(0,27)  ) ]
+                    gameid = '10'#組選
+                else:
+                    ball = [str(random.randint(1,26)  ) ]
+                    gameid = '11'#直選 
+                play_num = return_P(str_='0123456789',cal_= int(ball[0]) 
+                ,play_type= play_dict[play_type1] , game_type = gameid)[1]
+            
+            elif play_type3 == 'ermabudingwei':
+                ball = Joy188Test.random_ball(2)
+                ball = ['%s,%s'%(ball[0],ball[1])]
+                #mul = Joy188Test.random_mul(1000)
+            elif play_type3 == 'zuliu':
+                ball = Joy188Test.random_ball(3)
+                ball = ['%s,%s,%s'%(ball[0],ball[1],ball[2])]
+            elif play_type3 == 'zusan':
+                play_num = 2
+                ball = Joy188Test.random_ball(2)
+                ball = ['%s,%s'%(ball[0],ball[1])]
+            elif play_type3 == 'kuadu':
+                ball =['0']
+                play_num = 10
+            else:
+                ball = [str(Joy188Test.random_mul(9)) ]
+                if play_type3 == 'baodan':
+                    play_num = 54
+            mul = Joy188Test.random_mul(10)
+        elif play_type1 in ['houer','qianer']:
+            if play_type3 == 'fushi':
+                mul =1
+                if play_type2 == 'zhixuan':# 直選
+                    ball = Joy188Test.cal_ball(99111,play_type1,play_type2,play_type3)
+                else:# 組選
+                    ball = Joy188Test.random_ball(2)
+                    ball = ['%s,%s'%(ball[0],ball[1])]
+            elif play_type3== 'hezhi':
+                play_dict = {'qianer': '15', 'houer': '14'}
+                if play_type2 == 'zhixuan':# 直選
+                    ball = [ str(random.randint(0,18))]
+                    gameid = '10'#組選
+                else:
+                    ball = [ str(random.randint(1,17))]
+                    gameid = '11'#組選
+                play_num = return_P(str_='0123456789',cal_= int(ball[0] ) ,
+                        play_type= play_dict[play_type1] ,
+                         game_type = gameid)[1]
+            elif play_type3== 'kuadu':
+                ball =['0']
+                play_num = 10
+            else:
+                if play_type3 == 'baodan':
+                    play_num = 9
+                ball = [str(Joy188Test.random_mul(9)) ]
+            mul = Joy188Test.random_mul(10)
+    
+        elif play_type1== 'yixing':# 五個號碼,只有一個隨機數值
+            ran = Joy188Test.random_mul(4)
+            ball = ['-' if i !=ran else str(Joy188Test.random_mul(9)) for i in range(5)]
+            mul = Joy188Test.random_mul(50)
+        elif play_type1 == 'chungtienpao':
+            ball = [str(round(random.uniform(1,2),2))]
+            mul = Joy188Test.random_mul(1)
+        elif play_type1== "guanya":
+            range_ball = [i for i in range(1,11)]
+            ball = ['-' if i not in [0,1]  else '0%s'%range_ball[i] for i in range(10)]
+            mul = Joy188Test.random_mul(10)
+        elif play_type1== 'guanyaji':
+            range_ball = [i for i in range(1,11)]
+            ball = ['-' if i not in [0,1,2]  else '0%s'%range_ball[i]  for i in range(10)]
+            mul = Joy188Test.random_mul(10)
+        elif play_type1 == 'qiansi':
+            ball = ["07 08 09 10,09 10,10,08 09 10,-,-,-,-,-,-"]
+            mul = Joy188Test.random_mul(10)
+        elif play_type1 == 'qianwu':
+            ball = ["07 08 09 10,07 08 10,07 10,10,06 07 08 09 10,-,-,-,-,-"]
+            mul = Joy188Test.random_mul(10)
+        else:
+             mul = Joy188Test.random_mul(1)
+        
+        
+        a = Joy188Test.list_Transtr(ball)
+        #global Joy188Test.ball_value
+        #print(ball)
+
+        return a,play_num, mul
+    
+    def random_fushi(num,play_type1):
+        ball_list = []
+        for i in range(int(num)):
+            ball = Joy188Test.ball_type(play_type1=play_type1,play_type2='zhixuan',
+            play_type3='fushi')
+            print(ball)
+            ball_list.append({"id":i,"ball":ball[0],"type":"%s.zhixuan.fushi"%play_type1,
+            "moneyunit":"1","multiple":1,"awardMode":1,"num":1} )
+        #print(ball_list) 
+        return ball_list
+    
+    # type_ = ''隨機所有完法, type_ = 'fushi' 只有複試完法
+    def game_type(lottery,game_type1,game_type2,game_type3):
+        global play_
+        game_group = {'wuxing':u'五星','sixing':u'四星','qiansan':u'前三','housan':u'後三',
+        'zhongsan':u'中三','qianer':u'前二','houer':u'後二','xuanqi':u'選ㄧ','sanbutonghao':u'三不同號',
+        'santonghaotongxuan':u'三同號通選','guanya':u'冠亞','biaozhuntouzhu':u'標準玩法','zhengma':u'正碼',
+        'p3sanxing':u'P3三星','renxuan':u'任選','zhenghe':'整合','guanyaji':'冠亞季','qiansi':'前四',
+                'qianwu':'前五'  }
+
+        game_set = {
+        'zhixuan': u'直選','renxuanqizhongwu': u'任選一中一','biaozhun':u'標準','zuxuan':u'組選'
+        ,'pingma':u'平碼','putongwanfa':u'普通玩法','hezhi':'和值'}
+        game_method = {
+        'fushi': u'複式','zhixuanfushi':u'直選複式','zhixuanliuma':u'直選六碼',
+        'renxuan7': u'任選7','hezhi':'和值'    
+        }
+        #建立 個隨機的goup玩法 ex: wuxing,目前先給時彩系列使用
+        group_ = Joy188Test.play_type(lottery,game_type1,game_type2,game_type3)
+        
+        if game_type3  == 'fushi':# 五星/四星 隨機, 複試 是固定
+            print('複試完法隨機')
+            lottery_ball = Joy188Test.random_fushi(random.randint(1,7),group_[0])
+            play_ = "%s.%s.%s"%(group_[0],group_[1],group_[2])
+            return lottery_ball# 1 被  2注
+        else:
+            lottery_ball = Joy188Test.ball_type(play_type1=group_[0],
+                    play_type2=group_[1],play_type3=group_[2])
+            
+        
+        # 組出 動態的投注內容 , 目前只有num=0, lottery_sh
+
+        
+        test_dicts = {   
+        0 : ["%s.zhixuan.fushi"%(group_[0],),lottery_ball[0]] , 
+        1 : ["qianer.zhixuan.zhixuanfushi",'3,6,-'],
+        2 : ["xuanqi.renxuanqizhongwu.fushi","01,02,05,06,08,09,10"],
+        3 : ["sanbutonghao.biaozhun.biaozhuntouzhu","1,2,6"],
+        4 : ["santonghaotongxuan.santonghaotongxuan.santonghaotongxuan","111 222 333 444 555 666"],
+        5 : ["%s.zhixuan.fushi"%(group_,),lottery_ball],
+        6 : ['qianer.zuxuan.fushi','4,8'],
+        7 : ["biaozhuntouzhu.biaozhun.fushi","04,08,13,19,24,27+09",],
+        8 : ["zhengma.pingma.zhixuanliuma","04"],
+        9 : ["p3sanxing.zhixuan.p3fushi","9,1,0",],
+        10: ["renxuan.putongwanfa.renxuan7","09,13,16,30,57,59,71"],   
+        11: ["%s.chungtienpao.chungtienpao"%(group_,),lottery_ball],#快開
+        12: ["zhenghe.hezhi.hezhi","3"],#pc蛋蛋
+        13: ["%s.%s.%s"%(group_[0],group_[1],group_[2]),lottery_ball[0]] ,  
+        }
+        play_num = 1
+        mul = Joy188Test.random_mul(10)
+        if lottery in lottery_sh:
+            if lottery == 'jlffc':
+                num = 13# 新測試
+                play_ = test_dicts[13][0]
+                play_num = lottery_ball[1]
+                mul = lottery_ball[2]
+                
+            else:
+                num = 0
+                play_ = u'玩法名稱: %s.%s.%s'%(game_group[group_],game_set['zhixuan'],
+                game_method['fushi'])
+
+        elif lottery in lottery_3d:
+            num = 1
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['qianer'],game_set['zhixuan'],
+                    game_method['zhixuanfushi'])
+        elif lottery in lottery_noRed:
+            if lottery in ['p5','np3']:
+                num = 9
+                play_ = u'玩法名稱: %s.%s.%s'%(game_group['p3sanxing'],game_set['zhixuan'],
+                    game_method['fushi'])
+            else:
+                num = 1
+                play_ = u'玩法名稱: %s.%s.%s'%(game_group['qianer'],game_set['zhixuan'],
+                        game_method['zhixuanfushi'])
+
+        elif lottery in lottery_115:
+            num = 2
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['xuanqi'],game_set['renxuanqizhongwu'],
+                    game_method['fushi'])
+        elif lottery in lottery_k3:
+            num = 3
+            play_ = u'玩法名稱: %s.%s'%(game_group['sanbutonghao'],game_set['biaozhun'])
+        elif lottery in lottery_sb:
+            num = 4
+            play_ = u'玩法名稱: %s'%(game_group['santonghaotongxuan'])
+        elif lottery in lottery_fun:
+            num = 5
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group[group_],game_set['zhixuan'],
+                    game_method['fushi'])
+        elif lottery == 'shssl':
+            num = 6
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['qianer'],game_set['zuxuan'],
+                    game_method['fushi'])
+        elif lottery ==  'ssq':
+            num = 7
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['biaozhuntouzhu'],game_set['biaozhun'],
+                    game_method['fushi'])
+        elif lottery == 'lhc':
+            num = 8
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['zhengma'],game_set['pingma'],
+                    game_method['zhixuanliuma'])
+
+        elif lottery in ['bjkl8','fckl8']:
+            num = 10
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['renxuan'],game_set['putongwanfa'],
+                    game_method['renxuan7'])
+        elif lottery == 'pcdd':
+            num = 12
+            play_ = u'玩法名稱: %s.%s.%s'%(game_group['zhenghe'],game_set['hezhi'],
+            game_method['hezhi'])
+        else:
+            num = 11
+            mul = Joy188Test.random_mul(1)
+            play_ = u'玩法名稱: 沖天炮'
+        return test_dicts[num][0],test_dicts[num][1],play_num, mul
+    def req_post_submit(account,lottery,data_,moneyunit,awardmode,plan,issuecode):
+            awardmode_dict = {0:u"非一般模式",1:u"非高獎金模式",2:u"高獎金"}
+            money_dict = {1:u"元模式",0.1:u"分模式",0.01:u"角模式"}
+            #Pc_header['Cookie']= 'ANVOID='+ cookies_[account]
+            Pc_header['Cookie']= 'ANVOID='+ FF_().cookies[account]
+
+
+            r = session.post(em_url+'/gameBet/'+lottery+'/submit', 
+            data = json.dumps(data_),headers=Pc_header)
+
+            global content_
+            lottery_name= u'投注彩種: %s'%lottery_dict[lottery][0]  
+            #try:
+            msg = (r.json()['msg'])
+            orderid = (r.json()['data']['orderId'])#用來 到時撤銷接口使用
+            mode = money_dict[moneyunit]
+            mode1 = awardmode_dict[awardmode]
+            project_id = (r.json()['data']['projectId'])#訂單號
+            submit_amount = (r.json()['data']['totalprice'])#投注金額
+            #submit_mul = u"投注倍數: %s"%m#隨機倍數     
+            #print(r.json()['isSuccess'])
+
+            if r.json()['isSuccess'] == 0:#
+                #select_issue(get_conn(envs),lottery_dict[lottery][1])#呼叫目前正在販售的獎期
+                content_ = (lottery_name+"\n"+ mul_+ "\n"+play_ +"\n"+ msg+"\n"+
+                           "投注內容: %s\n"%ball_type_post[1])
+
+                if r.json()['msg'] == u'存在封锁变价':#有可能封鎖變價,先跳過   ()
+                    print(r.json()['msg'])
+                elif r.json()['msg'] == u'您的投注内容 超出倍数限制，请调整！':
+                    #print(u'倍數超出了唷,下次再來')
+                    pass # 因為 超出被數 已經 在msg 裡.不用重複 顯示
+                elif  r.json()['msg']==u'方案提交失败，请检查网络并重新提交！':
+                    print(r.json()['msg'])
+
+                else:#可能剛好 db抓到獎期剛好截止
+                    #Joy188Test.select_issue(Joy188Test.get_conn(1),lottery_dict[lottery][1])
+                    issuecode = Joy188Test.web_issuecode(lottery,account)#抓獎其
+                    print('銷售截止, 重新要講其: %s'%issuecode)
+                    ball_anys = Joy188Test.return_CouNum(Joy188Test.store_ball,3)[1]
+                    print('分析該期號碼顯示 %s'%ball_anys)
+                    Joy188Test.store_ball = {}
+                    Joy188Test.submit_inf[lottery] = issuecode
+                    plan_ = [{"number":"123","issueCode":issuecode,"multiple":1}]
+                    data_['orders'] = plan_
+
+                    r = session.post(em_url+'/gameBet/'+lottery+'/submit', 
+                    data = json.dumps(data_),headers=Pc_header)
+            else:#投注成功
+                Joy188Test.submit_inf[lottery] = issuecode
+                Joy188Test.ball_dict[issuecode] = Joy188Test.store_ball
+                if plan > 1:# 追號
+
+                    print(u'追號, 期數:%s'%plan)
+                    plan_code = Joy188Test.select_PlanCode(conn=Joy188Test.get_conn(envs),
+                                lotteryid=lottery_dict[lottery][1],account=account)
+                    submit_type = '追號單號: %s'%plan_code
+                else:
+                    submit_type = '投注單號: %s'%project_id
+                content_ = (lottery_name+"\n"+submit_type+"\n"
+                        +mul_+ "\n" + "投注內容: %s\n"%ball_type_post[1]
+                        +play_+"\n"+u"投注金額: "+ str(float(submit_amount*0.0001*plan))+"\n"
+                        +mode+"/"+mode1+"\n"+msg+"\n")
+                    #order_dict[lottery]  = {project_id: orderid}# 存放, 後續 掣單使用
+            #except:
+                #content_ = lottery_name + "失敗"
+            print(content_)
+    '''
+    game_type1 為五星/四星/三星.....game_type2 為複試 組選 單式ˋ ......
+    彩種投注 ,type帶複試 使用隨機生成的複試邏輯
+    '''
+    def test_Submit(account,moneyunit,plan,game_type1='',game_type2='',game_type3=''):
+            print('投注帳號: %s'%account)
+            #for i in lottery_dict.keys(): 
+            for i in ['jlffc']:
+                while True:
+                    try:
+                        global mul_ #傳回 投注出去的組合訊息 req_post_submit 的 content裡
+                        global mul
+                        #ball_type_post = Joy188Test.game_type(i)# 找尋彩種後, 找到Mapping後的 玩法後內容
+                        if i in ['btcctp','btcffc','xyft','xyft168']:# 只開放開獎金彩種
+                            awardmode = 2
+                        else:
+                            awardmode = 1
+                        global ball_type_post
+                        ball_type_post = Joy188Test.game_type(i,game_type1,game_type2,game_type3)
+                        # 找尋彩種後, 找到Mapping後的 玩法後內容
+                        if game_type3  == 'fushi':
+                            print('複試完法')
+                            balls = ball_type_post
+                            play_num = 1
+                            mul = 1
+                        else:
+                            play_num = ball_type_post[2]
+                            mul = ball_type_post[3]
+                            amount = 2*mul*moneyunit
+                        mul_ = (u'選擇倍數: %s'%mul)
+                        if plan == 1   :# 一般投住
+                            if Joy188Test.submit_inf == {}:# 空的 一定會要講其:
+                                issuecode = Joy188Test.web_issuecode(i,account)#抓獎其
+                                #print('test123')
+                                #print('沒有獎其, 需更新獎其: %s'%issuecode)
+                            else:
+                                issuecode = Joy188Test.submit_inf[i]
+                                #print('已有獎其, 無須重新要獎其: %s'%issuecode)
+                            plan_ = [{"number":'123',"issueCode":issuecode,"multiple":1}]
+                            print(u'一般投住')
+                            isTrace=0
+                            traceWinStop=0
+                            traceStopValue=-1
+                        else: #追號
+                            if i in ['slmmc','sl115','jsdice','jldice1','jldice2','btcctp','lhc']:
+                                print("彩種: %s 沒開放追號"%lottery_dict[i][0]+"\n")
+                                break
+                            plan_ = Joy188Test.plan_num(envs,i,random.randint(2,plan))#隨機生成 50期內的比數
+                            isTrace=1
+                            traceWinStop=1
+                            traceStopValue=1
+                        len_ = len(plan_)# 一般投注, 長度為1, 追號長度為
+                        print(play_num)
+
+                        if game_type3  == 'fushi':
+                            post_noRed = {"gameType":i,"isTrace":isTrace,"traceWinStop":traceWinStop,
+                            "traceStopValue":traceWinStop,
+                            "balls":balls,"orders": plan_ ,"amount":2*len(balls)}
+                        else:
+                            post_noRed = {"gameType":i,"isTrace":isTrace,"traceWinStop":traceWinStop,
+                            "traceStopValue":traceWinStop,
+                            "balls":[{"id":1,"ball":ball_type_post[1],"type":ball_type_post[0],
+                            "moneyunit":moneyunit,"multiple":mul,"awardMode":awardmode,
+                            "num":play_num}],"orders": plan_ ,"amount" :play_num*len_*amount}
+                        Joy188Test.req_post_submit(account,i,post_noRed,moneyunit,awardmode,
+                                                       len_,issuecode)
+                        break
+                    except IndexError as e :
+                        print(e)
+                        #print("彩種: %s 投注失敗"%lottery_dict[i][0]+"\n")
+                        break
+
+
+# In[ ]:
 
 
 FF_().select_lottery(FF_().get_conn(1))
@@ -894,24 +1687,305 @@ FF_().select_lottery(FF_().get_conn(1))
 FF_().lottery_dict
 
 
-# In[467]:
+# In[ ]:
 
 
-FF_().cookies
+FF_().cookies  
 
 
-# In[699]:
+# In[ ]:
 
 
-#for i in range(3):
-    #FF_().Pc_Login(url='dev02',user='hsieh{:03d}'.format(i))#登入接口, url: 環境 , user: 用戶, source: 登入莊置(不帶: 預設PC)
-FF_().Pc_Login(url='dev02',user='hsieh030501')    
+for i in range(50):
+    FF_().Pc_Login(url='joy188',user='kerr{:02d}'.format(i))#登入接口, url: 環境 , user: 用戶, source: 登入莊置(不帶: 預設PC)
+#FF_().Pc_Login(url='dev02',user='hsieh030501')    
 
 
-# In[317]:
+# In[ ]:
 
 
-FF_().submit_inf
+for i in range(2):
+    Joy188Test.test_Submit('kerr00'.format(i),moneyunit=1,plan=1,game_type1= '' ,
+    game_type3='fushi')
+
+
+# In[ ]:
+
+
+
+#user_test = 'kerr39'
+for i in range(1):
+    Joy188Test.test_Submit('kerr36'.format(i),moneyunit=1,plan=1,game_type1= 'wuxing' ,
+                           game_type3='fushi')
+
+
+# In[ ]:
+
+
+Joy188Test.ball_dict
+
+
+# In[ ]:
+
+
+#or key in Joy188Test.ball_dict.keys():
+    #print(key)
+key =  list(Joy188Test.ball_dict.keys())[0]
+print(list(Joy188Test.ball_dict.keys()))
+import matplotlib
+matplotlib.style.use('fivethirtyeight')
+matplotlib.rcParams['figure.figsize'] = [10, 10]
+any_data = Joy188Test.ball_dict[key]
+data = Joy188Test.return_CouNum(any_data,1)[1]
+tst_dict = defaultdict(list)
+for num in data.keys():
+    for key_ in data[num].keys():
+        #print(key,data[num][key])
+        tst_dict[key_].append(data[num][key_ ])
+index = list(data.keys())
+
+plotdata = pd.DataFrame(
+    tst_dict,
+    index = index
+)
+plotdata.plot(kind="bar")
+plt.title(key)
+plt.figure(figsize=(100,500))
+
+
+# In[ ]:
+
+
+b = Joy188Test.store_ball
+print(b)
+a = Joy188Test.return_CouNum(Joy188Test.store_ball,1)[1]
+
+
+# In[ ]:
+
+
+
+Joy188Test.ball_dict = {}
+Joy188Test.store_ball = {}
+threads = []
+for index,account_key in enumerate(FF_().cookies.keys()):
+    
+    if index < 30:
+        '''
+        t = threading.Thread(target=Joy188Test.test_Submit,args=(account_key,1,1,
+                                         '' , '', 'fushi'))
+        '''
+        Joy188Test.test_Submit(account_key.format(i),moneyunit=1,plan=1,game_type1= 'qianer' ,
+        game_type2 = '',
+        game_type3='fushi')
+    elif 40 > index >= 30:
+        Joy188Test.test_Submit(account_key.format(i),moneyunit=1,plan=1,game_type1= '' ,
+        game_type2 = 'budingwei',
+        game_type3='')
+    else:
+        Joy188Test.test_Submit(account_key.format(i),moneyunit=1,plan=1,game_type1= '' ,
+        game_type2 = '',
+        game_type3='hezhi')
+        '''
+        t = threading.Thread(target=Joy188Test.test_Submit,args=(account_key,1,1,
+                                         '' , '', 'fushi'))
+        '''
+        
+'''   
+    threads.append(t)
+for i in threads:
+    i.start()
+for i in threads:
+    i.join()
+'''
+
+
+# In[ ]:
+
+
+Joy188Test.ball_dict
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+test = {'wuxing-zhixuan-fushi': ['51429', '87687', '76768', '78887', '78777',
+        '22155', '51211', '63434', '43443', '46443', '36664', '34364', '89777', '97779', 
+        '79878', '78787', '00550'], 'qianer-zhixuan-fushi': ['35', '87', '41', '86', '11'], 
+        'houer-zhixuan-fushi': ['50', '79', '66', '43', '34', '83'], 
+        'sixing-zhixuan-fushi': ['2504', '9989'], 
+        'qiansan-zhixuan-fushi': ['812', '223', '032', '090', '094', '049', '166', 
+        '661', '001', '010', '606', '945', '949'], 
+        'housan-zhixuan-fushi': ['768', '424', '332', '293', '392']}
+b = [ '{:05d}'.format(i) for i in range(100000)]
+
+for key in test:
+    if key == 'houer-zhixuan-fushi':
+        print(key)
+        need_min = []
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a[3:].count(i) >= 1:
+                        #print(a,type(a))
+                        need_min.append(a)
+            break
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+    elif key == 'qianer-zhixuan-fushi':
+        print(key)
+        need_min = []
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a[:2].count(i) >= 1:
+                        #print(a,type(a))
+                        need_min.append(a)
+            break
+        #print(len(b),len(need_min))
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+    elif key == 'housan-zhixuan-fushi':
+        print(key)
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a[2:].count(i) >= 1:
+                        #print(a,type(a))
+                        need_min.append(a)
+            break
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+
+    elif key == 'zhongsan-zhixuan-fushi':
+        need_min = []
+        print(key)
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a[1:4].count(i) >= 1:
+                        need_min.append(a)
+            break
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+
+    elif key == 'qiansan-zhixuan-fushi':
+        print(key)
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a[:3].count(i) >= 1:
+                        #print(a,type(a))
+                        need_min.append(a)
+            break
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+    elif key == 'sixing-zhixuan-fushi':
+        print(key)
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a[1:].count(i) >= 1:
+                        #print(a,type(a))
+                        need_min.append(a)
+            break
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+    elif key == 'wuxing-zhixuan-fushi':
+        print(key)
+        while True:
+            for a in b:
+                for i in test[key]:
+                    if a == i :
+                        #print(a,type(a))
+                        need_min.append(a)
+            break
+        b = list_minus(b,need_min)# 元長度 - 減需扣除長度
+    else:# 其它玩法 先不做
+        pass
+    
+        
+        
+    print(len(b))
+#print(b)
+#print(b)
+    
+
+
+# In[ ]:
+
+
+def list_minus(A_list,B_list): #兩個列表長度相減  , 參數一 減到 參數二
+    from collections import OrderedDict
+    d_set = OrderedDict.fromkeys(A_list)
+    for x in B_list:
+        if x in A_list:
+            try:
+                del d_set[x]
+            except:
+                pass
+    A = list(d_set.keys())
+    return A
+
+
+# In[ ]:
+
+
+print(test_list)
+
+
+# In[ ]:
+
+
+a = '53874'
+a.count('5386')
+
+
+# In[ ]:
+
+
+'zhongsan-zhixuan-fushi'= ['874', '888', '887', '784', '878', '686', '573', '867',
+                '767', '773', '833', '291', '222', '192', '306', '212', 
+                           '493', '494', '399', '349', '161', '677', '777', '055']
+#a = ['{:03d}'.format(i) for i in range(10000)]
+a = ['18741','87423','12345']
+s 
+    
+
+
+# In[ ]:
+
+
+a = '18877'
+b = a.count('88')
+print(b)
+a[-2:].count('88')
+
+
+# In[ ]:
+
+
+for index,account_key in enumerate(FF_().cookies.keys()):
+    if index <  10:
+        Joy188Test.test_Submit(account_key,moneyunit=1,plan=1,game_type1='qiansan',game_type3='fushi')
+    elif 10 <= index  <= 15:
+        Joy188Test.test_Submit(account_key,moneyunit=1,plan=1,game_type1= 'zhongsan' ,
+                           game_type3='fushi')
+    elif 16 <= index<= 20:
+        Joy188Test.test_Submit(account_key,moneyunit=1,plan=1,game_type1='',game_type3='yimabudingwei')
+    elif 21 <= index<= 30:
+        Joy188Test.test_Submit(account_key,moneyunit=1,plan=1,game_type1= 'qianer' ,
+                           game_type3='fushi')
+    else:
+        Joy188Test.test_Submit(account_key,moneyunit=1,plan=1,game_type1='housan',game_type3='fushi')
+
+    
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
@@ -920,14 +1994,7 @@ FF_().submit_inf
 FF_().lottery_dict
 
 
-# In[667]:
-
-
-for user in FF_().cookies.keys():
-    FF_().Pc_Submit(lottery = 'test',awardmode=None,type_=1,user=user,test_lottery= 'slmmc')
-
-
-# In[398]:
+# In[ ]:
 
 
 for lottery in ['cqssc','btcffc','txffc','tjssc','hljssc','fhjlssc','llssc','jlffc','360ffc']:
@@ -936,14 +2003,14 @@ for lottery in ['cqssc','btcffc','txffc','tjssc','hljssc','fhjlssc','llssc','jlf
         FF_().Pc_Submit(lottery = lottery,awardmode=2,type_=1,user=user)
 
 
-# In[681]:
+# In[ ]:
 
 
 #for lottery_name in FF_().lottery_dict:
 FF_().Pc_Submit(lottery = 'test',awardmode=None,type_=1,user='hsieh002',test_lottery='slmmc')
 
 
-# In[677]:
+# In[ ]:
 
 
 
@@ -952,7 +2019,7 @@ FF_().test_request(data={"amount":1},env_url=post_url,func_url='/yb/transferToTh
 ,req_header={'Content-Type':'application/json; application/json; charset=UTF-8'  })
 
 
-# In[702]:
+# In[ ]:
 
 
 threads = []
@@ -1051,17 +2118,6 @@ for item in DG(username='hsieh001').data_type.keys():
 # In[ ]:
 
 
-from collections import defaultdict
-d = defaultdict(list)
-d['a'].append(1)
-d['a'].append(1)
-d['b'].append(2)
-print(d)
-
-
-# In[ ]:
-
-
 os.getcwd()# 當前路徑
 
 
@@ -1120,16 +2176,36 @@ print(str_md)
 
 timestap =int(time.time())
 token_time = time.localtime(int(timestap))
+
                     
-print(timestap,token_time)
+print(timestap,token_time,token_time.tm_min-1)
 
 
-# In[139]:
+# In[ ]:
+
+
+convert_date_to_int(date)
+
+
+# In[ ]:
+
+
+
+time_ = int(time.time())
+print(time_)
+now_time = datetime.datetime.now()
+t2 = (now_time-datetime.timedelta(minutes=0.5)).strftime("%Y-%m-%d %H:%M:%S")
+print(now_time,t2)
+ts2=int(time.mktime(time.strptime(t2, '%Y-%m-%d %H:%M:%S')))
+print(ts2,type(ts2))
+
+
+# In[ ]:
 
 
 def return_GameBoxMd5(appId,appKey):
     
-    time_ = int(time.time())
+    time_ = 1615264090
     print(time_)
     m = hashlib.md5()
     str_ = "appId=%s&nonce-str=ibuaiVcKdpRxkhJA&timestamp=%s&appKey=%s"%(appId,str(time_), appKey)
@@ -1139,10 +2215,23 @@ def return_GameBoxMd5(appId,appKey):
     str_md = m.hexdigest()
     str_md.upper()
     return str_md.upper()
-return_GameBoxMd5('VeJqf6n8','361136d4bf616e32ecf497e79a61020d65c386f9')
+return_GameBoxMd5('WF2yOdVE','079406e677ea4cc14c8229b40bce2e3d4ebeba77')
 
 
-# In[472]:
+# In[ ]:
+
+
+test = str(1615262466)
+(test).strftime("%Y-%m-%d %H:%M:%S")
+
+
+# In[ ]:
+
+
+
+
+
+# In[65]:
 
 
 from requests_toolbelt import MultipartEncoder
@@ -1217,9 +2306,12 @@ class GameBox(FF_):
         {"17":{"lang": "CNY","member": {"password": password, "username": username}}},
         {"18":{"agentLogin":"vb_xoso","gameId":game_id,"lang": "en","deviceId": "1","backUrl": "null","cashierURL":"null","member": {"username": username}}},
         {"19":{"deviceId":"1","lang":"cs","gameId":game_id,"member": {"username": "XVN"+username}}},
-        {"20":{"lang": "cs","backUrl":"https://www.baidu.com","type":"real","member": {"memberId":game_id,"username": username,"password": password}}},
-        {"21":{"agentLogin":"yl00gi01","type":game_id,"protocol":"http:","extension":"","fullScreen":0,"backUrl":"","lang":"en","member": {"username": username,"memberId": username,"password": password}}}]]
-        ],
+        {"20":{"lang": "cs","backUrl":"https://www.baidu.com","type":"real","member": 
+               {"memberId":game_id,"username": username,"password": password}}},
+        {"21":{"agentLogin":"yl00gi01","type":game_id,"protocol":"http:",
+               "extension":"","fullScreen":0,"backUrl":"","lang":"en","member": 
+               {"username": username,"memberId": username,"password": password}}}]]
+        ,
         "freeLogin":["客戶/試玩登入",
         "/api/member/freeLogin?agent_name=%s"%clientId,[
         {"0":{"lang": "cs"}},{"1":{}},{"2":{}},{"3":{}},{"4":{}},
@@ -1618,7 +2710,7 @@ env = 1 #環境變數  0 測試區 或1 灰度
 # 0 : DG , 1: 沙巴 ,2: sexy, 3 : cq9 , 4: gpi,5: YB,6: PG, 7:bg ,8: tfGaming,9: imSb ,10: ya_bo_lottery
 #11: JDB , 12: bbin 13: yx_game ,14: ky , 15 : og真人 , 16: acepoker , 17: wm_live, 18 : pp_game , 19 : png_game, 20 : haba_game,
 #21 : yl_game
-client_env = 16
+client_env = 21
 
 clientId = client_type["supplier_user"][client_env]# agent_name 商戶 ,gamebox預設 : DGTE01011T , 沙巴: 
 client_detail = GameBox.GameBox_Con(clientId,env)# 登入DB , 是 寫死 cq9_test ,
@@ -1629,7 +2721,7 @@ supplier_user = client_type["supplier_user"][client_env]
 #for i in range(1):# http://43.240.38.15:21080  , http://54.248.18.149:82030
 bg_type = 'fish' #['game','fish','chess','lottery']
 
-GameBox.GameBox_test(type_= 'transfer',clientId=clientId,username='kerr001',
+GameBox.GameBox_test(type_= 'signUp',clientId=clientId,username='kerr001',
 client_detail=client_detail,password='123qwe',url=url_dict[env],amount="100",
                      filename='gameList',supplier_index=0)
 
@@ -1640,7 +2732,7 @@ client_detail=client_detail,password='123qwe',url=url_dict[env],amount="100",
 #supplierGameFile]):ii
 
 
-# In[340]:
+# In[ ]:
 
 
 threads = []
@@ -1656,14 +2748,14 @@ for i in threads:
     i.join()
 
 
-# In[429]:
+# In[ ]:
 
 
 a ={'HB,AHBC,null,1':"红包收入"}
 tuple(a.keys())
 
 
-# In[454]:
+# In[ ]:
 
 
 
@@ -2083,7 +3175,7 @@ test = round(a[0],2)
 print(type(test))
 
 
-# In[614]:
+# In[ ]:
 
 
 data = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"",
@@ -2098,7 +3190,7 @@ data['body']['param'] = param_data
 print(data)
 
 
-# In[631]:
+# In[ ]:
 
 
 def admin_Login(url):
@@ -2155,10 +3247,16 @@ admin_Login('dev02')
 # In[ ]:
 
 
+header
+
+
+# In[ ]:
+
+
 select_userid(get_conn(1),'kerr001')
 
 
-# In[619]:
+# In[ ]:
 
 
 
@@ -2195,7 +3293,7 @@ def admin_benefit(id_,sum_):
     print(r.text)
 
 
-# In[628]:
+# In[ ]:
 
 
 def test_func(id_,value):
@@ -2204,7 +3302,7 @@ def test_func(id_,value):
     print(r.text)
 
 
-# In[658]:
+# In[ ]:
 
 
 threads = []
@@ -2218,7 +3316,7 @@ for i in threads:
     i.join()
 
 
-# In[642]:
+# In[ ]:
 
 
 select_fundID(get_conn(0),'hsieh001')# 從DB 抓豬 typeid和 id
@@ -2234,7 +3332,7 @@ for key in fund_id.keys():
 FF_().Pc_Submit(lottery = 'slmmc',awardmode=None,type_=1,user='kerr000')
 
 
-# In[657]:
+# In[ ]:
 
 
 for user in ['hsieh002']:
@@ -2244,7 +3342,7 @@ for user in ['hsieh002']:
     #activity_confirm(user)
 
 
-# In[656]:
+# In[ ]:
 
 
 activity_confirm('hsieh002')
@@ -2644,7 +3742,7 @@ for i in record.keys():
 print(record_list)
 
 
-# In[621]:
+# In[ ]:
 
 
 
@@ -2762,17 +3860,6 @@ def select_registerDate(conn,date,account_):
         for i in rows:
             bron_day.append(i[0])
     conn.close()
-def select_bal(conn,lotteryid):#開獎號
-    with conn.cursor() as cursor:
-        sql = "select number_record from game_issue where lotteryid = '%s'         and create_time > to_date('2019-01-01','YYYY-MM-DD')"%lotteryid  
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        global number_record
-        number_record = []
-        
-        for i in rows:
-            number_record.append(i[0])
-    conn.close()
     
 def select_numberRecord(conn,lottery,num):#開獎號
     with conn.cursor() as cursor:
@@ -2882,10 +3969,10 @@ def select_userUrl(conn,userid):
 select_test_user(get_conn(1),lottery='',account='kerr000')
 
 
-# In[26]:
+# In[ ]:
 
 
-FF_().Pc_Login(url='joy188.195353',user='kerrwin000')
+FF_().Pc_Login(url='joy188',user='kerr')
 
 
 # In[ ]:
@@ -2894,7 +3981,7 @@ FF_().Pc_Login(url='joy188.195353',user='kerrwin000')
 FF_().Account_Cookie('kerrwin000')
 
 
-# In[30]:
+# In[ ]:
 
 
 test_user = select_test_user(get_conn(1),lottery='',account='kerrwin000')[0:100]
@@ -2958,16 +4045,6 @@ for i in range(27):# PC蛋蛋個號碼mapping 顏色
         number_color = '紅'
     test_[i] = number_color
 test_
-
-
-# In[ ]:
-
-
-select_numberRecord(get_conn(0),'bjkl8',10)
-print(number_record)
-for issue  in number_record.keys():
-    print(issue)
-    print(bjkl8_Tran_pcdd(number_record[issue]))
 
 
 # In[ ]:
@@ -3437,7 +4514,7 @@ a = json.loads(redis_val)
 print(type(a))
 
 
-# In[70]:
+# In[ ]:
 
 
 
