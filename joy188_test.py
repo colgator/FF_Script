@@ -18,6 +18,7 @@ import MySQLdb
 import threading
 from collections import defaultdict
 import FF_
+from queue import Queue
 # In[ ]:
 lottery_dict = FF_.Lottery().lottery_dict
 lottery_sh = FF_.Lottery().lottery_sh
@@ -1131,10 +1132,14 @@ class Joy188Test(unittest.TestCase):
             print(third)
             print(u'連線有問題,請稍等')
     @staticmethod
-    def session_post(user,third,url,post_data):#共用 session post方式 (Pc)
+    def session_post(user,third,url,post_data,q='',em_=''):#共用 session post方式 (Pc)
         Pc_header['Cookie']= 'ANVOID='+cookies_[user]
         try:
-            r = session.post(post_url+url,headers= Pc_header,data=json.dumps(post_data))
+            if em_ != '':
+                url_type = em_url# em開頭
+            else:
+                url_type = post_url#預設 使用 post_url , www 開頭
+            r = session.post(url_type+url,headers= Pc_header,data=json.dumps(post_data))
 
             if 'Balance' in url:
                 print('%s, 餘額: %s'%(third,r.json()['balance']))
@@ -1145,6 +1150,8 @@ class Joy188Test(unittest.TestCase):
                     print('%s 轉帳失敗'%third)
             elif 'getuserbal' in url:
                 print('4.0 餘額: %s'%r.json()['data'])
+            else:
+                q.put(r)
             #print(title)#強制便 unicode, 不燃顯示在html報告  會有誤
             #print('result: '+statu_code+"\n"+'---------------------')
 
@@ -1152,17 +1159,27 @@ class Joy188Test(unittest.TestCase):
             print(third)
             print(u'連線有問題,請稍等')
     @staticmethod
-    def session_get(url_,url):#共用 session get方式
+    def session_get(url_,url,type_='',q=''):#共用 session get方式,type不帶 '' ,列出內容 ,q queue
         Pc_header['Cookie']= 'ANVOID='+cookies_[env_dict['一般帳號'][envs]]
         try:
             r = session.get(url_+url,headers=Pc_header)
-            html = BeautifulSoup(r.text,'lxml')# type為 bs4類型
-            title = str(html.title)
-            statu_code = str(r.status_code)#int 轉  str
-            
-            print(title)#強制便 unicode, 不燃顯示在html報告  會有誤
-            print(url)
-            print('result: '+statu_code+"\n"+'---------------------')
+            if type_ != '':# 給走勢圖 多增加 print  內容
+                q.put(r)
+                '''
+                print(title)#強制便 unicode, 不燃顯示在html報告  會有誤
+                print(url)
+                print('回覆內容: ')
+                print(r.json()['data'])
+                print('---------------------')
+                '''
+            else:
+                html = BeautifulSoup(r.text,'lxml')# type為 bs4類型
+                title = str(html.title)
+                statu_code = str(r.status_code)#int 轉  str
+                print(title)#強制便 unicode, 不燃顯示在html報告  會有誤
+                print(url)
+                print('result: '+statu_code+"\n"+'---------------------')
+
 
         except requests.exceptions.ConnectionError:
             print(title)
@@ -1187,40 +1204,144 @@ class Joy188Test(unittest.TestCase):
     def test_188():
         u"4.0頁面測試"
         threads = []
-        url_188 = ['/fund','/bet/fuddetail','/withdraw','/transfer','/index/activityMall'
-        ,'/ad/noticeList?noticeLevel=2','/frontCheckIn/checkInIndex','/frontScoreMall/pointsMall'
-        ,'/proxy/index','/proxy/cusmag','/proxy/promotetpl']        
-        em_188 = ['/gameUserCenter/queryOrdersEnter','/gameUserCenter/queryPlans'
-                  ,'/gameUserCenter/queryCurrentUserReport']
-        for i in url_188:
-            t = threading.Thread(target=Joy188Test.session_get,args=(post_url,i))
+        q = Queue()
+        timeStamp = int(time.time()*1000)#時間戳
+        now = datetime.datetime.now()
+        now_start = '%s-%s-1'%(now.year,now.month)# 當月 1 號
+        now_date = '%s-%s-%s'%(now.year,now.month,now.day)
+        user =  env_dict['一般帳號'][envs]
+        userid = {'hsieh001': '1341294', 'kerr001': '1373224'}
+
+        view_page = {'/activity_system/?controller=activity&action=getnewestlist&siteId=1&userId=%s&_=%s'%(userid[user],timeStamp): '活動商城','/frontCheckIn/doCheckInByUserId': ['簽到',{},''], 
+        '/proxy/loadchartdata?timestart={now_start}&timeend={now_date}&model=lottery&type=bet&plat=%20&_={timeStamp}'.format(now_start=now_start,now_date=now_date,timeStamp=timeStamp): '舊代理彩種', '/proxy/loadchartdata?timestart={now_start}&timeend={now_date}&model=thirdly&type=bet&plat=%20&_={timeStamp}'.format(timeStamp=timeStamp,now_date=now_date,now_start=now_start): '舊代理三方', '/agentcenter/getallcalagentdata': ['新代理',{"starDate":"{now_start} 00:00:00".format(now_start=now_start),"endDate":"{now_date} 23:59:59".format(now_date=now_date)},'']
+        }
+        for view_key in view_page.keys():
+            if any(post_func in view_key for post_func in ['frontCheckIn','getallcalagentdata']  ): #post
+                post_data = view_page[view_key][1]
+                url_type = view_page[view_key][2]
+                t = threading.Thread(target=Joy188Test.session_post,args=(user,
+                '',view_key,post_data,q,url_type))# view_page[view_key][1]  為data
+            else: #GET
+                t = threading.Thread(target=Joy188Test.session_get,args=(post_url,
+                view_key,'v',q))
             threads.append(t)
-        for i in em_188:
-            t = threading.Thread(target=Joy188Test.session_get,args=(em_url,i))
-            threads.append(t)
+
         for i in threads:
             i.start()
         for i in threads:
             i.join()
+        que_result = []# 取得queue裡的值
+        for _ in range(len(threads)):
+            que_result.append(q.get())
+        for response in que_result:
+            response_url = response.url
+            r_json = response.json()
+            print(response_url)
+            if 'activity_system' in response_url:
+                print('活动商城 api')
+                len_data = len(r_json['data'])
+                print('回復訊息: '+"\n")
+                print(r_json['data'][random.randint(0,len_data-1)])
+            elif 'frontCheckIn' in response_url:
+                print('簽到 api')
+                print('用戶名: %s'%user)
+                print('回復訊息: %s'%r_json['message'])
+                print('回復狀態: %s'%r_json['isSuccess'])
+            elif 'proxy' in response_url:
+                if 'lottery' in response_url:
+                    msg = '彩種'
+                else:
+                    msg = '三方'
+                print('舊代理中心%s api'%msg)
+                try:
+                    bet = r_json['total']['bet']
+                    profit = r_json['total']['profit']
+                    win = r_json['total']['win']
+                except TypeError:# 有可能沒資料 會造成抱錯
+                    bet = 0
+                    profit = 0
+                    win = 0
+                print('用戶名: %s'%user)
+                print('查詢時間 ,本月: %s-%s'%(now_start,now_date))
+                print('回復訊息: '+"\n")
+                print('投注: %s'%bet)
+                print('盈虧: %s'%profit)
+                print('中獎金額: %s'%win)
+            elif 'getallcalagentdata' in response_url:
+                print('新代理中心 api')
+                bet = r_json['caldata']['allCalData']['bet']
+                win = r_json['caldata']['allCalData']['win']
+                profit = r_json['caldata']['allCalData']['profit']
+                teamCount = r_json['countdata']['teamCount']
+                print('用戶名: %s'%user)
+                print('查詢時間 ,本月: %s-%s'%(now_start,now_date))
+                print('回復訊息: '+"\n")
+                print('投注: %s'%bet)
+                print('輸贏: %s'%profit)
+                print('中獎金額: %s'%win)
+                print('團隊用戶: %s'%teamCount)
+
+
+
+            print('---------------------')
     @staticmethod
     def test_chart():
         u"走勢圖測試"
-        ssh_url = ['cqssc','hljssc','tjssc','xjssc','llssc','txffc','btcffc','fhjlssc',
-                   'jlffc','slmmc','sd115','ll115','gd115','jx115']
-        k3_url = ['jsk3','ahk3','jsdice','jldice1','jldice2']
-        low_url = ['d3','v3d']
-        fun_url = ['xyft','pk10']
-        for i in ssh_url:
-            Joy188Test.session_get(em_url,'/game/chart/%s/Wuxing'%i)
-        for i in k3_url:
-            Joy188Test.session_get(em_url,'/game/chart/%s/chart'%i)
-        for i in low_url:
-            Joy188Test.session_get(em_url,'/game/chart/%s/Qiansan'%i)
-        for i in fun_url:
-            Joy188Test.session_get(em_url,'/game/chart/%s/CaipaiweiQianfushi'%i)
-        Joy188Test.session_get(em_url,'/game/chart/p5/p5chart')
-        Joy188Test.session_get(em_url,'/game/chart/ssq/ssq_basic')
-        Joy188Test.session_get(em_url,'/game/chart/kl8/Quwei')
+        threads = []
+        q = Queue()
+        lottery_chart = {'d3':'Qiansan','v3d':'Qiansan','shssl': 'Housan','lottery_sh': 'Wuxing',
+            'lottery_115': 'Wuxing', 'lottery_k3': 'chart', 'lottery_fun':
+            'CaipaiweiQianfushi', 'fckl8': 'Quwei','p5':'p5chart', 'ssq':'ssq_basic'}
+        while True:
+            for i in lottery_dict:
+                if i in lottery_sh:
+                    if i == 'fhjlssc':
+                        i = 'cqssc'# 只有鳳凰吉利時彩 特殊
+                    chart_lottery = 'lottery_sh'
+                elif i == 'fc3d':
+                    i = 'd3'
+                    chart_lottery = i
+                elif i in lottery_115:
+                    chart_lottery = 'lottery_115'
+                elif i in lottery_k3 or i in  lottery_sb:
+                    chart_lottery = 'lottery_k3'
+                elif i in lottery_fun:
+                    chart_lottery = 'lottery_fun'
+                elif i in ['bjkl8','fckl8']:
+                    chart_lottery = 'fckl8'
+                else:
+                    chart_lottery = i
+                    if i  == 'lhc':
+                        print('六合彩無走勢')
+                        print('---------------------')
+                        break
+                chart_url = '/game/chart/%s/%s/data?periodsType=periods&gameType=%s&gameMethod=%s&periodsNum=1'%(i,lottery_chart[chart_lottery],i,lottery_chart[chart_lottery])
+                t1 = threading.Thread(target=Joy188Test.session_get,args=(em_url,chart_url,'content',q))
+                threads.append(t1)
+            for i in threads:
+                i.start()
+            for i in threads:
+                i.join()
+            que_result = []# 取得queue裡的值
+            for _ in range(len(threads)):
+                que_result.append(q.get())
+            for response in que_result:
+                r_json = response.json()
+                #print(r_json)
+                try:
+                    print('彩種: %s'%lottery_dict[ r_json['lotteryCode'] ][0] )
+                    print('狀態: %s'%r_json['isSuccess'])
+                    print('資料: '+"\n")
+                    print(r_json['data'])
+                    print('---------------------')
+                except KeyError:# fc3d 和 d3 會有keyerror發生 lottery_dict 原因
+                    print('彩種: %s'%r_json['lotteryCode'] )
+                    print('狀態: %s'%r_json['isSuccess'])
+                    print('資料: '+"\n")
+                    print(r_json['data'])
+                    print('---------------------')
+
+            break
     @staticmethod
     def test_thirdBalance():
         '''4.0/第三方餘額'''
@@ -1954,39 +2075,27 @@ class Joy188Test2(unittest.TestCase):
         #print(post_url)
         dr.get(post_url+'/safepersonal/safecodeedit')
         print(dr.title)
-        global passwd_dict
-        passwd_dict = {# 環境 密碼先 開始
-            0:['123qwe','amberrd'],1:['amberrd','123qwe']
-        }
-        password = ['amberrd','123qwe']
-        Joy188Test2.ID( 'J-password').send_keys(passwd_dict[envs][0])
-        print(u'當前登入密碼: %s'%passwd_dict[envs][0])
-        Joy188Test2.ID( 'J-password-new').send_keys(passwd_dict[envs][1])
-        Joy188Test2.ID( 'J-password-new2').send_keys(passwd_dict[envs][1])
-        print(u'新登入密碼: %s,確認新密碼: %s'%(passwd_dict[envs][1],passwd_dict[envs][1]))
+        Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)# 從DB 抓取 限在 密碼
+
+        if password[0] == 'fa0c0fd599eaa397bd0daba5f47e7151':#123qwe
+            newpass = "amberrd"#amberrd  新密碼
+            oldpass = '123qwe'# 原本的密碼
+            msg = '新密碼為amberrd'
+        else:# 密碼為amberrd
+            newpass = "123qwe"
+            oldpass = "amberrd"
+            msg = '新密碼為123qwe'
+        Joy188Test2.ID( 'J-password').send_keys(oldpass)
+        print(u'當前登入密碼: %s'%oldpass)
+        Joy188Test2.ID( 'J-password-new').send_keys(newpass)
+        Joy188Test2.ID( 'J-password-new2').send_keys(newpass)
+        print(u'新登入密碼: %s,確認新密碼: %s'%(newpass,newpass))
         Joy188Test2.ID( 'J-button-submit-text').click()
         sleep(2)
         if Joy188Test2.ID( 'Idivs').is_displayed():#成功修改密碼彈窗出現
             print(u'恭喜%s密码修改成功，请重新登录。'%user)
             Joy188Test2.ID( 'closeTip1').click()#關閉按紐,跳回登入頁
             sleep(1)
-            Joy188Test2.ID( 'J-user-name').send_keys(user)
-            Joy188Test2.ID( 'J-user-password').send_keys(passwd_dict[envs][1])
-            Joy188Test2.ID( 'J-form-submit').click()
-            sleep(4)
-            print((dr.current_url))
-            if dr.current_url == post_url+'/index':#判斷是否登入成功
-                print(u'%s登入成功'%user)
-                dr.get(post_url+'/safepersonal/safecodeedit')
-                Joy188Test2.ID( 'J-password').send_keys(passwd_dict[envs][1])#在重新把密碼改回原本的amberrd
-                Joy188Test2.ID( 'J-password-new').send_keys(passwd_dict[envs][0])
-                Joy188Test2.ID( 'J-password-new2').send_keys(passwd_dict[envs][0])
-                Joy188Test2.ID( 'J-button-submit-text').click()
-                sleep(5)
-            else:
-                print(u'登入失敗')
-                pass
-
         else:
             print(u'密碼輸入錯誤')
             pass
@@ -2125,9 +2234,9 @@ class Joy188Test3(unittest.TestCase):
     def test_iapiLogin():
         '''APP登入測試'''
         account_ ={0: {'hsieh00':'總代','hsieh001':'一代','hsiehapp001':'一代','hsieh0620':'玩家',
-                      'hsiehwin':'合營1940'} 
+                      'hsiehwin':'APP合營'} 
                    ,1:{'kerr00':u'總代','kerr001':u'一代','kerrapp001':'二代','kerr010':'玩家',
-                      'kerrwin1940': '合營1940'}
+                      'kerrwin1940': 'APP合營'}
                   }
         global token_,userid_,loginpasssource,uuid
         token_  ={}
@@ -2206,7 +2315,7 @@ class Joy188Test3(unittest.TestCase):
         #for i in lottery_115:
             while True:
                 try:
-                    print(i)
+                    #print(i)
                     now = int(time.time()*1000)#時間戳
                     lotteryid = lottery_dict[i][1]
                     if i in ['slmmc']:
@@ -2345,6 +2454,55 @@ class Joy188Test3(unittest.TestCase):
                     print('%s, %s'%(e,lottery_dict[lottery][0]))
                     print('------------------------------')
                     break
+    @staticmethod
+    def test_IapiOgAgent():
+        '''舊代裡中心'''
+        now = datetime.datetime.now()
+        start_date = '%s-%s-1'%(now.year,now.month)# 本月 1號
+        now_date = '%s-%s-%s'%(now.year,now.month,now.day)
+        user = env_dict['APP合營'][envs]
+    
+        OgAgent_dict = {'彩票': ['/agentCenter/queryAgentCenterData', {"identity":1,"duration":{"start":start_date,"end":now_date}} ],'三方': ['/agentCenter/queryThirdlyAgentCenterData',{"userId":userid_[user],"userName":None,"plat":"","searchItem":None,"identity":1,"startDate":start_date,"endDate":now_date}] }
+        print('%s 查詢'%user)
+        print('查詢時間 ,本月: %s - %s '%(start_date,now_date))
+        for key in OgAgent_dict.keys():
+            print('%s: '%key)
+            data = Joy188Test3.IapiData(user)
+            param_data = data["body"]["param"]
+            param_data.update(OgAgent_dict[key][1])# 將post的data更新
+            data['body']['param'] = param_data
+
+            r = requests.post(env+OgAgent_dict[key][0],
+            data=json.dumps(data),headers=App_header)
+            r_json = r.json()
+            if r_json['head']['status'] != 0: # 狀態待確認 ,成功 0
+                print('狀態待確認')
+            else:
+                result = r_json['body']['result']
+                print(result)
+    @staticmethod
+    def test_IapiNewAgent():
+        '''新代理中心'''
+        now = datetime.datetime.now()
+        start_date = '%s-%s-1'%(now.year,now.month)# 本月 1號
+        now_date = '%s-%s-%s'%(now.year,now.month,now.day)
+        user = env_dict['APP合營'][envs]
+        print('%s 查詢'%user)
+        print('查詢時間 ,本月: %s - %s '%(start_date,now_date))
+
+        data = Joy188Test3.IapiData(user)
+        agent_data = {"startDate":"{start_date} 00:00:00".format(start_date=start_date),"endDate":"{now_date} 23:59:59".format(now_date=now_date)}
+        param_data = data["body"]["param"]
+        param_data.update(agent_data)
+        data['body']['param'] = param_data
+
+        r = requests.post(env+'/agentCenter/getAgentCenterIndexPageAllData',
+            data=json.dumps(data),headers=App_header)
+        r_json = r.json()
+        result = r_json['body']['result']
+        print(result)
+
+
     @staticmethod
     def test_IapiTransfer():
         '''APP上下級轉帳'''
@@ -2876,17 +3034,22 @@ envs = 1
 
 # In[191]:
 Joy188Test.test_Login()#一般登入
+
 # In[205]:
 
-
-
 Joy188Test3.test_iapiLogin()#app登入
+
+#In[]
+Joy188Test3.test_IapiNewAgent()
 
 # In[ ]:
 Joy188Test3.test_IapiPlanSubmit()# app追號
 
 # In[209]:
 Joy188Test3.test_iapiSubmit()#app投注
+
+# In[]
+Joy188Test.test_188() 
 
 # In[208]:
 
@@ -2945,7 +3108,8 @@ if __name__ == '__main__':
            Joy188Test3('test_IapiWithDraw'),Joy188Test3('test_iapiCheckIn'),
            Joy188Test3('test_AppBalance'),
            Joy188Test3('test_ApptransferIn'),Joy188Test3('test_ApptransferOut'),
-           Joy188Test3('test_AppcheckPassword'),Joy188Test3('test_IapiTransfer')
+           Joy188Test3('test_AppcheckPassword'),Joy188Test3('test_IapiTransfer'),
+           Joy188Test3('test_IapiOgAgent'),Joy188Test3('test_IapiNewAgent')
           ]
 
     test = [Joy188Test('test_Login'), Joy188Test('test_redEnvelope'),
@@ -2957,9 +3121,6 @@ if __name__ == '__main__':
     suite.addTests(tests2)
     suite.addTests(app)
 
-    #suite.addTests(test)
-    
-    #suite.addTests(except_)
     now = time.strftime('%Y_%m_%d^%H-%M-%S')
     filename = now + u'自動化測試' + '.html'
     fp = open(filename, 'wb')
