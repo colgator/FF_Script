@@ -32,6 +32,7 @@ lottery_noRed = FF_.Lottery().lottery_noRed
 cancel_lottery_list = FF_.Lottery().cancel_lottery_list
 third_list = FF_.Third().third_list
 env_dict = FF_.Env().env_dict
+usdt_dict = FF_.Others().usdt_dict
 
 
 # In[ ]:
@@ -40,6 +41,22 @@ fake = Factory.create()
 card = (fake.credit_card_number(card_type='visa16'))#產生一個16位的假卡號
 print(card)
 
+# In[]:
+class Testsss(unittest.TestCase):
+    def __init__(self,case):
+        super().__init__(case)
+    def test_1(self):
+        print('hsieh')
+
+#In[]:
+if __name__ == '__main__':
+    suite = unittest.TestSuite()
+    suite_list = []
+    suite_list.append( Testsss('test_1') )
+    print(suite_list,suite_list[0])
+    suite.addTest(suite_list[0])
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(suite)
 
 # In[207]:
 
@@ -93,7 +110,8 @@ class Joy188Test(unittest.TestCase):
 
 
         account_ ={0: {
-                'dev02': [{'hsieh000':u'總代','hsieh001':u'一代','hsiehthird001':'一代'},'一般4.0'],
+                'dev02': [{'hsieh000':u'總代','hsieh001':u'一代','hsiehthird001':'一代','hsieh001001':'','hsieh001002':'',
+                'hsieh0420001':''},'一般4.0'],
                 'fh82dev02': [{'hsiehwin000':u'總代','hsiehwin001':u'一代','hsiehwin1940test':'合營1940'
                               },'一般合營']
         } ,1:{
@@ -409,12 +427,13 @@ class Joy188Test(unittest.TestCase):
         with conn.cursor() as cursor:
             sql ="select passwd from user_customer where account = '%s'"%account
             cursor.execute(sql)
+            #print(sql)
             rows = cursor.fetchall()
-            global password
             password = []
             #print(rows[0])
             for i in rows:
                 password.append(i[0])
+            return password
         conn.close()
 
     @staticmethod    
@@ -926,7 +945,7 @@ class Joy188Test(unittest.TestCase):
             num = 11
         return test_dicts[num][0],test_dicts[num][1],play_num
     @staticmethod
-    def req_post_submit(account,lottery,data_,moneyunit,awardmode,plan):
+    def req_post_submit(account,lottery,data_,moneyunit,awardmode,plan, plan_type=''):
         awardmode_dict = {0:u"非一般模式",1:u"非高獎金模式",2:u"高獎金"}
         money_dict = {1:u"元模式",0.1:u"分模式",0.01:u"角模式"}
         Pc_header['Cookie']= 'ANVOID='+ cookies_[account]
@@ -958,7 +977,9 @@ class Joy188Test(unittest.TestCase):
                     #print(u'倍數超出了唷,下次再來')
                     pass # 因為 超出被數 已經 在msg 裡.不用重複 顯示
                 elif  r.json()['msg']==u'方案提交失败，请检查网络并重新提交！':
-                    print(r.json()['msg'])
+
+                    print (data_) 
+                    #print(r.json()['msg'])
 
                 else:#可能剛好 db抓到獎期剛好截止
                     #Joy188Test.select_issue(Joy188Test.get_conn(1),lottery_dict[lottery][1])
@@ -976,6 +997,10 @@ class Joy188Test(unittest.TestCase):
                 if plan > 1:# 追號
 
                     print(u'追號, 期數:%s'%plan)
+                    if plan_type == 0:
+                        print('追中不停')
+                    else:
+                        print('追中即停')
                     plan_code = Joy188Test.select_PlanCode(conn=Joy188Test.get_conn(envs),
                                 lotteryid=lottery_dict[lottery][1],account=account)
                     #print(plan_code)
@@ -995,13 +1020,14 @@ class Joy188Test(unittest.TestCase):
         print(content_)
     @staticmethod
     #@jit_func_time
-    def test_Submit(account,moneyunit,plan ):#彩種投注
+    def test_Submit(account,moneyunit,plan ):#彩種投注,plan_type 0 不停, 1中級停
         global order_dict
         order_dict = {}
         print('投注帳號: %s'%account)
         for i in lottery_dict.keys(): 
         #for i in lottery_115:
-        #for i in ['jlffc','ptxffc']:
+        #for i in ['jlffc','ptxffc','hnffc','cqssc','xjssc','hljssc']:
+        #for i in lottery_sh:
             while True:
                 try:
                     
@@ -1020,7 +1046,9 @@ class Joy188Test(unittest.TestCase):
                                 odds = 95
                             else:
                                 awardmode = 1
-                                odds = 90 
+                                odds = 90
+                    elif  i == 'super2000':
+                        break
                     else:
                         mul = Joy188Test.random_mul(5)
                         awardmode = 1
@@ -1037,13 +1065,18 @@ class Joy188Test(unittest.TestCase):
                         isTrace=0
                         traceWinStop=0
                         traceStopValue=-1
+                        plan_type = ""# 一般不需要
                     else: #追號
                         if i in ['slmmc','sl115','jsdice','jldice1','jldice2','btcctp','lhc']:
                             print("彩種: %s 沒開放追號"%lottery_dict[i][0]+"\n")
                             break
-                        plan_ = Joy188Test.plan_num(envs,i,random.randint(2,plan))#隨機生成 50期內的比數
+                        plan_ = Joy188Test.plan_num(envs,i,random.randint(2,plan))#隨機生成 50期內的比數 
+
+                        #plan_  = Joy188Test.plan_num(envs,i,plan)
                         isTrace=1
-                        traceWinStop=1
+                        plan_type = random.randint(0,1)
+                         
+                        traceWinStop= plan_type
                         traceStopValue=1
                     len_ = len(plan_)# 一般投注, 長度為1, 追號長度為
                     post_data = {"gameType":i,"isTrace":isTrace,"traceWinStop":traceWinStop,
@@ -1093,7 +1126,7 @@ class Joy188Test(unittest.TestCase):
                     elif i in lottery_sb:
                         Joy188Test.req_post_submit(account,i,post_data_sb,moneyunit,awardmode,len_) 
                     else:
-                        Joy188Test.req_post_submit(account,i,post_noRed,moneyunit,awardmode,len_)
+                        Joy188Test.req_post_submit(account,i,post_noRed,moneyunit,awardmode,len_,plan_type)
                     break
                 except IndexError as e :
                     #print(e)
@@ -1102,13 +1135,12 @@ class Joy188Test(unittest.TestCase):
     @staticmethod
     def test_LotterySubmit():
         u"投注測試"
-        Joy188Test.test_Submit(account=env_dict['一般帳號'][envs],moneyunit=1,
-            plan=1)#
+        Joy188Test.test_Submit(account=env_dict['一般帳號'][envs],plan=1,moneyunit=1)#env_dict['一般帳號'][envs],moneyunit=1,))#
     @staticmethod
     def test_LotteryPlanSubmit():
         u"追號測試"
-        Joy188Test.test_Submit(account=env_dict['合營1940'][envs],moneyunit=1,
-            plan=5)#
+        Joy188Test.test_Submit(account=env_dict['合營1940'][envs],plan=10,moneyunit=1)
+            #plan=10)#plan= random.randint(2,plan)
     @staticmethod
     def APP_SessionPost(third,url,post_data):#共用 session post方式 (Pc)
         header={
@@ -1565,21 +1597,26 @@ class Joy188Test2(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         global dr,user
+        password = Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)# 從DB
+        print(password[0])
         try:
             cls.dr = webdriver.Chrome(executable_path=r'C:\python3\Scripts\FF_Script\chromedriver.exe')
             dr = cls.dr
             if envs == 1: 
                 cls.dr.get(post_url)
                 user = 'kerr002'
-                password = 'amberrd'
                 env_info = '188'
             else:
                 cls.dr.get(post_url)
                 user = 'hsieh002'
-                password = '123qwe'
                 env_info = 'dev'
+            if password[0] == 'fa0c0fd599eaa397bd0daba5f47e7151':#123qwe
+                password  = '123qwe'
+            else:
+                password = 'amberrd'
             print(u'登入環境: %s,登入帳號: %s'%(env_info ,user))
             cls.dr.find_element_by_id('J-user-name').send_keys(user)
+            print(password)
             cls.dr.find_element_by_id('J-user-password').send_keys(password)
             cls.dr.find_element_by_id('J-form-submit').click()
             sleep(3)
@@ -2075,7 +2112,7 @@ class Joy188Test2(unittest.TestCase):
         #print(post_url)
         dr.get(post_url+'/safepersonal/safecodeedit')
         print(dr.title)
-        Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)# 從DB 抓取 限在 密碼
+        password = Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)# 從DB 抓取 限在 密碼
 
         if password[0] == 'fa0c0fd599eaa397bd0daba5f47e7151':#123qwe
             newpass = "amberrd"#amberrd  新密碼
@@ -2107,14 +2144,17 @@ class Joy188Test2(unittest.TestCase):
             0: "/register?id=18417062&exp=1902283553071&pid=13412941&token=e618",
             1: "/register/?id=27402734&exp=1885877796573&pid=13732231&token=3738"
         }# list[0] : 一般用戶 , list[1] : 合營用戶
+        passwd_dict = {
+            0: '123qwe',1:'amberrd'
+        }
         dr.get(post_url+OpenUrl_dict[envs])#kerr000的連結
         print(dr.title)
         global user_random
         user_random = user+'%s'%random.randint(1,1000000)#隨機生成 kerr下面用戶名
         print(u'註冊用戶名: %s'%user_random)
         Joy188Test2.ID('J-input-username').send_keys(user_random)#用戶名
-        Joy188Test2.ID('J-input-password').send_keys(passwd_dict[envs][0])#第一次密碼
-        Joy188Test2.ID('J-input-password2').send_keys(passwd_dict[envs][0])#在一次確認密碼
+        Joy188Test2.ID('J-input-password').send_keys(passwd_dict[envs])#第一次密碼
+        Joy188Test2.ID('J-input-password2').send_keys(passwd_dict[envs])#在一次確認密碼
         Joy188Test2.ID('J-button-submit').click()#提交註冊        
         sleep(5)
         if dr.current_url == post_url + '/index':
@@ -2177,20 +2217,26 @@ class Joy188Test2(unittest.TestCase):
     @staticmethod
     def test_bindcardUs():
         u"數字貨幣綁卡"
-        dr.get(post_url+'/bindcard/bindcarddigitalwallet?bindcardType=2')
-        print(dr.title)
-        card = random.randint(1000,1000000000)#usdt數字綁卡,隨機生成
-        Joy188Test2.ID('walletAddr').send_keys(str(card))
-        print(u'提現錢包地址: %s'%card)
-        Joy188Test2.ID('securityPassword').send_keys(safe_dict[envs][1])
-        print(u'安全密碼:%s'%safe_dict[envs][1])
-        Joy188Test2.ID('J-Submit').click()#提交
-        sleep(3)
-        if Joy188Test2.ID('div_ok').is_displayed():#彈窗出現
-            print(u'%s数字货币钱包账户绑定成功！'%user_random)
-            Joy188Test2.ID('CloseDiv2').click()
-        else:
-            print(u"數字貨幣綁定失敗")
+        #dr.get(post_url+'/bindcard/bindcarddigitalwallet?bindcardType=2')
+        #print(dr.title)
+        #card = random.randint(1000,1000000000)#usdt數字綁卡,隨機生成
+        for key in usdt_dict.keys():
+            dr.get(post_url+'/bindcard/bindcarddigitalwallet?bindcardType=2')
+            Joy188Test2.ID('protocol').click()#幣種選擇
+            Joy188Test2.XPATH('//*[@id="protocol"]/option[{value}]'.format(value=usdt_dict[key][1])).click()# 選擇 trc-20
+            card = usdt_dict[key][0]
+            Joy188Test2.ID('walletAddr').send_keys(card)#
+            print(u'usdt 幣種協議: %s , 提現錢包地址: %s'%(key,card))
+            Joy188Test2.ID('securityPassword').send_keys(safe_dict[envs][1])
+            print(u'安全密碼:%s'%safe_dict[envs][1])
+            Joy188Test2.ID('J-Submit').click()#提交
+            sleep(2)
+            if Joy188Test2.ID('div_ok').is_displayed():#彈窗出現
+                print(u'%s数字货币钱包账户绑定成功！'%user_random)
+                Joy188Test2.ID('CloseDiv2').click()
+            else:
+                print(u"數字貨幣綁定失敗")
+
         
     @classmethod
     def tearDownClass(cls):
@@ -2263,7 +2309,7 @@ class Joy188Test3(unittest.TestCase):
         #登入request的json
         for i in account_[envs].keys():
             if i in ['kerr010','hsieh0620']:# 玩家 會使用更換密碼街口
-                Joy188Test.select_userPass(Joy188Test.get_conn(envs),i)#找出動態的密碼, 避免更換密碼被更動
+                password = Joy188Test.select_userPass(Joy188Test.get_conn(envs),i)#找出動態的密碼, 避免更換密碼被更動
                 login_data = Joy188Test3.Iapi_LoginData(username=i,uuid_=uuid,passwd=password[0])
             elif i in env_dict['APP合營']:
                 login_data = Joy188Test3.Iapi_LoginData(username=i,uuid_=uuid,
@@ -2313,14 +2359,13 @@ class Joy188Test3(unittest.TestCase):
         order_dict = {}# 存放  到時 要撤消單
         for i in lottery_dict.keys():
         #for i in lottery_115:
+        #for i in ['slmmc','sl115']:
             while True:
                 try:
                     #print(i)
                     now = int(time.time()*1000)#時間戳
                     lotteryid = lottery_dict[i][1]
-                    if i in ['slmmc']:
-                        break
-                    elif i == 'pcdd': # 先寫死 固定完法 和投注內容, 因為動態完法 賠率會不同
+                    if i == 'pcdd': # 先寫死 固定完法 和投注內容, 因為動態完法 賠率會不同
                         Joy188Test.web_issuecode(i)
                         data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"",
                         "sessionId":token_[user]},"body":{"pager":{"startNo":"1","endNo":"99999"},"param":
@@ -2329,8 +2374,13 @@ class Joy188Test3(unittest.TestCase):
                          "traceStop":0,"money":50,"redDiscountTotal":0,"awardGroupId":"263","list":
                          [{"methodid":"66_28_71","codes":"15","nums":1,"fileMode":0,"mode":1,
                            "odds":"12.32","times":1,"money":50,"awardMode":1}]}}}
+                    elif i == 'super2000':
+                        break
                     else:
-                        Joy188Test.web_issuecode(i)
+                        if i in ['sl115','slmmc']:# 不用要講其
+                            pass
+                        else:
+                            Joy188Test.web_issuecode(i)
                         ball_type_post = Joy188Test.game_type(i)#玩法和內容,0為玩法名稱, 1為投注內容
                         methodid = ball_type_post[0].replace('.','')#ex: housan.zhuiam.fushi , 把.去掉
 
@@ -2375,7 +2425,8 @@ class Joy188Test3(unittest.TestCase):
                     print('please wait')
                     break
                 except IndexError as e:
-                    print(e)
+                    #print(e)
+                    print(lottery_dict[i][0])
                     break
     @staticmethod
     def test_IapiPlanSubmit():
@@ -2394,6 +2445,8 @@ class Joy188Test3(unittest.TestCase):
                         break
                     elif lottery in ['pcdd','fckl8','np3','n3d']:#awardmode 需待1
                         awardmode = 1
+                    elif lottery == 'super2000':
+                        break
                     else:
                         awardmode = 2
                     lotteryid = lottery_dict[lottery][1]
@@ -2625,6 +2678,7 @@ class Joy188Test3(unittest.TestCase):
             except IndexError:
                 ran_  = random.randint(0,3)# 隨機長
                 can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
+            can_lottery.remove('hljssc')#APP 沒有黑龍江 時時彩
             orderid = list(order_dict[can_lottery].values())[0]
 
             data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"","sessionId":token_[user]},"body":{"pager":{"startNo":"1","endNo":"99999"},"param":{
@@ -2723,7 +2777,7 @@ class Joy188Test3(unittest.TestCase):
             "password":  loginpasssource,"jointVenture": i,
             "cellphone":"", "qqAccount":"","wechat":"","id":int(token_result[i]['regCode']),
                     "exp":token_result[i]['exp'],"pid":int(token_result[i]['pid']),"qq":'',
-            "ip":"192.168.2.18","app_id":"10", "come_from":"4","appname":"1"},
+            "ip":"192.168.137.182","app_id":"10", "come_from":"4","appname":"1"},
             "pager":{"startNo":"","endNo":""}}} 
 
             r = requests.post(env+'user/register',data=json.dumps(data_),headers=App_header) 
@@ -2806,22 +2860,26 @@ class Joy188Test3(unittest.TestCase):
             else:
                 print('一般綁卡確認')
                 break
-            data_ = Joy188Test3.IapiData(user)#從新生成初始 data 
-            param_data = data_["body"]["param"]
-            usdt_card = "usdt%s"%random.randint(100,100000)
-            bind_data = {"bankId":1,"bank":"安璞分行",
-             "province":"","city":"",
-            "branch":"","accountName":"","account":"",
-            "secpass":passwd_info[envs][0],"bindCardType":2,
-                         "digitalWalletNumber":usdt_card }# usdt
-            param_data.update(bind_data)
-            data_['body']['param'] = param_data
-            r = requests.post(env+'security/cardBindingCommit',data=json.dumps(data_),
-                              headers=App_header)# 綁數字貨幣
-            if r.json()['head']['status'] == 0:
-                print('usdt綁卡成功, 卡號: %s'%(usdt_card))
-            else:
-                print('數字綁卡確認')
+            print('-----------------------------')
+            for key in usdt_dict.keys():
+                data_ = Joy188Test3.IapiData(user)#從新生成初始 data 
+                param_data = data_["body"]["param"]
+                usdt_card = usdt_dict[key][0]
+                bind_data = {"bankId":1,"bank":"安璞分行",
+                "province":"","city":"",
+                "branch":"","accountName":"","account":"",
+                "secpass":passwd_info[envs][0],"bindCardType":2,
+                "digitalWalletNumber": usdt_card,
+                "protocol": key  }# usdt
+                param_data.update(bind_data)
+                data_['body']['param'] = param_data
+                r = requests.post(env+'security/cardBindingCommit',data=json.dumps(data_),
+                                headers=App_header)# 綁數字貨幣
+                if r.json()['head']['status'] == 0:
+                    print('幣種協議: %s'%key)
+                    print('usdt 綁卡成功, 卡號: %s'%(usdt_card))
+                else:
+                    print('數字綁卡確認')
             break
     @staticmethod
     def test_IapiLockCard():
@@ -2974,7 +3032,7 @@ class Joy188Test3(unittest.TestCase):
         '''更換密碼'''
         user = env_dict['玩家'][envs]
         print('用戶: %s'%user)
-        Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)
+        password = Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)
         if password[0] == 'fa0c0fd599eaa397bd0daba5f47e7151':#123qwe
             newpass = "3bf6add0828ee17c4603563954473c1e"#amberrd  新密碼
             oldpass = 'fa0c0fd599eaa397bd0daba5f47e7151'# 原本的密碼
@@ -3031,6 +3089,8 @@ class Joy188Test3(unittest.TestCase):
 
 envs = 1
 
+#In[]:
+Joy188Test2.test_safepersonal()
 
 # In[191]:
 Joy188Test.test_Login()#一般登入
@@ -3040,7 +3100,7 @@ Joy188Test.test_Login()#一般登入
 Joy188Test3.test_iapiLogin()#app登入
 
 #In[]
-Joy188Test3.test_IapiNewAgent()
+Joy188Test3.test_OpenLink()
 
 # In[ ]:
 Joy188Test3.test_IapiPlanSubmit()# app追號
@@ -3049,7 +3109,7 @@ Joy188Test3.test_IapiPlanSubmit()# app追號
 Joy188Test3.test_iapiSubmit()#app投注
 
 # In[]
-Joy188Test.test_188() 
+Joy188Test.test_chart()
 
 # In[208]:
 
@@ -3058,9 +3118,20 @@ Joy188Test.test_LotterySubmit()#一般投注
 # In[ ]:
 Joy188Test3.test_AppRegister()#APP註冊
 
+# In[]:
+cookies_
+#In[]:
+Joy188Test.test_LotteryPlanSubmit()
+
 
 # In[203]:
-Joy188Test.test_LotteryPlanSubmit()#一般追號
+#account = env_dict['合營1940'][envs]
+for i in range(5):
+    for i in cookies_:
+        Joy188Test.test_LotteryPlanSubmit(account=i)#一般追號
+        Joy188Test.test_CancelOrder()
+
+
 # In[ ]:
 
 
@@ -3085,6 +3156,7 @@ if __name__ == '__main__':
 
 envs = 1# 0 dev , 1 : 188
 env_name = {0: 'dev',1: '188' }
+# 追號 先測試 用
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     order_dict= {}# 存放 order_code 和 orderid
@@ -3112,14 +3184,15 @@ if __name__ == '__main__':
            Joy188Test3('test_IapiOgAgent'),Joy188Test3('test_IapiNewAgent')
           ]
 
-    test = [Joy188Test('test_Login'), Joy188Test('test_redEnvelope'),
-            Joy188Test('test_tranUser'),Joy188Test('test_ChargeLimit')]
+    test = [Joy188Test('test_Login'),Joy188Test('test_redEnvelope')] 
     
-    
+    #suite.addTests(test)
+
 
     suite.addTests(tests)
     suite.addTests(tests2)
     suite.addTests(app)
+
 
     now = time.strftime('%Y_%m_%d^%H-%M-%S')
     filename = now + u'自動化測試' + '.html'
