@@ -29,10 +29,11 @@ lottery_k3 =  FF_.Lottery().lottery_k3
 lottery_sb = FF_.Lottery().lottery_sb
 lottery_fun = FF_.Lottery().lottery_fun
 lottery_noRed = FF_.Lottery().lottery_noRed
-cancel_lottery_list = FF_.Lottery().cancel_lottery_list
 third_list = FF_.Third().third_list
 env_dict = FF_.Env().env_dict
 usdt_dict = FF_.Others().usdt_dict
+url_dict  = FF_.Env().url_dict
+iapi_url = FF_.Env().iapi_url
 
 
 # In[ ]:
@@ -102,8 +103,6 @@ class Joy188Test(unittest.TestCase):
         #global envs#回傳redis 或 sql 環境變數   ,dev :0, 188:1
         global cookies_
         cookies_ = {}
-        url_dict = {0:['http://www.dev02.com','http://em.dev02.com'],
-                    1:['http://www2.joy188.com','http://em.joy188.com']}
         post_url  = url_dict[envs][0]
         em_url = url_dict[envs][1]
         pass_list = {0: b'123qwe',1:b'amberrd'}
@@ -332,6 +331,23 @@ class Joy188Test(unittest.TestCase):
             #conn.close()
             return plan_code
             
+        
+    @staticmethod
+    def select_CancelId(conn,user):# 找撤銷街口 可以撤銷的orderid
+        with conn.cursor() as cursor:
+            sql = "select g.id,c.lottery_name,g.order_code from game_order g inner join " \
+            "user_customer  u on g.userid = u.id inner join  game_series c on " \
+            f"g.lotteryid = c.lotteryid where u.account = '{user}' and "\
+            "g. order_time > to_date(trunc(sysdate,'DD')) and g.status = 1 \
+            order by g.order_time desc"
+            #print(sql)
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            order_cancel = defaultdict(list)
+            for i in rows:
+                order_cancel[i[0]].append(i[1])
+                order_cancel[i[0]].append(i[2])
+        return order_cancel
         
             
     @staticmethod
@@ -955,7 +971,7 @@ class Joy188Test(unittest.TestCase):
         r = session.post(em_url+'/gameBet/'+lottery+'/submit', 
         data = json.dumps(data_),headers=Pc_header)
 
-        global content_,order_dict 
+        global content_ 
         lottery_name= u'投注彩種: %s'%lottery_dict[lottery][0]  
         try:
             msg = (r.json()['msg'])
@@ -1014,15 +1030,13 @@ class Joy188Test(unittest.TestCase):
                                 +play_1+"\n"
                                 +play_2+"\n"+u"投注金額: "+ str(float(submit_amount*0.0001))+"\n"
                                 +mode+"/"+mode1+"\n"+msg+"\n")
-                order_dict[lottery]  = {project_id: orderid}# 存放, 後續 掣單使用
+                #order_dict[lottery]  = {project_id: orderid}# 存放, 後續 掣單使用
         except:
             content_ = lottery_name + "失敗"
         print(content_)
     @staticmethod
     #@jit_func_time
     def test_Submit(account,moneyunit,plan ):#彩種投注,plan_type 0 不停, 1中級停
-        global order_dict
-        order_dict = {}
         print('投注帳號: %s'%account)
         for i in lottery_dict.keys(): 
         #for i in lottery_115:
@@ -1267,7 +1281,10 @@ class Joy188Test(unittest.TestCase):
             que_result.append(q.get())
         for response in que_result:
             response_url = response.url
-            r_json = response.json()
+            try:
+                r_json = response.json()
+            except:
+                print('%s  有錯誤'%response_url)
             print(response_url)
             if 'activity_system' in response_url:
                 print('活动商城 api')
@@ -1550,18 +1567,15 @@ class Joy188Test(unittest.TestCase):
     @staticmethod
     def test_CancelOrder():#撤銷皆口
         '''撤消測試'''
-        #user =  env_dict['一般帳號'][envs]
-        Pc_header['Cookie']= 'ANVOID='+cookies_[env_dict['一般帳號'][envs]]
+        user =  env_dict['一般帳號'][envs]
+        Pc_header['Cookie']= 'ANVOID='+cookies_[user]
+        cancelID_dict = Joy188Test.select_CancelId(Joy188Test.get_conn(envs),user)#抓出 該用戶 今天投注 還在等待開獎的 key: orderid .value: lotteryid
+        orderid = random.choices(list(cancelID_dict.keys()))[0]#隨機取一個orderid
+        lotteryname = cancelID_dict[orderid][0]
+        order_code = cancelID_dict[orderid][1]
         try:
-            ran_  = random.randint(0,len(cancel_lottery_list))# 隨機長
-            try:
-                can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
-            except IndexError:
-                ran_  = random.randint(0,3)# 隨機長/
-                can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
-            orderid = list(order_dict[can_lottery].values())[0]
             r = session.post(em_url+'/gameUserCenter/cancelOrder?orderId=%s'%orderid,headers=Pc_header)
-            print('撤消彩種: %s ,方案編號: %s '%(can_lottery ,list(order_dict[can_lottery].keys())[0]))
+            print('撤消彩種: %s ,方案編號: %s '%(lotteryname ,order_code))
             if r.json()['status'] == 1:
                 print('撤消成功')
             else:
@@ -1596,12 +1610,11 @@ class Joy188Test2(unittest.TestCase):
     u"trunk頁面測試"
     @classmethod
     def setUpClass(cls):
-        global dr,user
-        password = Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)# 從DB
-        print(password[0])
+        global dr,user,post_url
         try:
             cls.dr = webdriver.Chrome(executable_path=r'C:\python3\Scripts\FF_Script\chromedriver.exe')
             dr = cls.dr
+            post_url = url_dict[envs][0]
             if envs == 1: 
                 cls.dr.get(post_url)
                 user = 'kerr002'
@@ -1610,20 +1623,21 @@ class Joy188Test2(unittest.TestCase):
                 cls.dr.get(post_url)
                 user = 'hsieh002'
                 env_info = 'dev'
+            password = Joy188Test.select_userPass(Joy188Test.get_conn(envs),user)# 從DB
+            print(password[0])
             if password[0] == 'fa0c0fd599eaa397bd0daba5f47e7151':#123qwe
                 password  = '123qwe'
+            elif password[0] == '3bf6add0828ee17c4603563954473c1e':
+                password = 'amberrd'
             else:
                 password = 'amberrd'
             print(u'登入環境: %s,登入帳號: %s'%(env_info ,user))
             cls.dr.find_element_by_id('J-user-name').send_keys(user)
             print(password)
             cls.dr.find_element_by_id('J-user-password').send_keys(password)
+            #sleep(3)
             cls.dr.find_element_by_id('J-form-submit').click()
             sleep(3)
-            if dr.current_url == post_url+'/index':#判斷是否登入成功
-                print(u'登入成功')
-            else:
-                print(u'登入失敗')
         except NoSuchElementException as e:
             print(e)
     @staticmethod
@@ -2297,15 +2311,14 @@ class Joy188Test3(unittest.TestCase):
         #判斷用戶是dev或188,  uuid和loginpasssource為固定值
         global env# ipai環境
         if envs == 0:
-            env = 'http://10.13.22.152:8199/'
             uuid = "2D424FA3-D7D9-4BB2-BFDA-4561F921B1D5"
             loginpasssource = "fa0c0fd599eaa397bd0daba5f47e7151"# 123qwe 加密
         elif envs == 1:
-            env = 'http://iphong.joy188.com/'
             uuid = 'f009b92edc4333fd'
             loginpasssource = "3bf6add0828ee17c4603563954473c1e"# amberrd加密
         else:
             pass
+        env =  iapi_url[envs]
         #登入request的json
         for i in account_[envs].keys():
             if i in ['kerr010','hsieh0620']:# 玩家 會使用更換密碼街口
@@ -2671,26 +2684,20 @@ class Joy188Test3(unittest.TestCase):
     def test_IapiCancelSubmit():
         '''APP撤消投注'''
         user = env_dict['APP帳號'][envs]
-        while True:
-            ran_  = random.randint(0,len(cancel_lottery_list))# 隨機長
-            try:
-                can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
-            except IndexError:
-                ran_  = random.randint(0,3)# 隨機長
-                can_lottery = cancel_lottery_list[ran_]# 要被撤消的彩種
-            can_lottery.remove('hljssc')#APP 沒有黑龍江 時時彩
-            orderid = list(order_dict[can_lottery].values())[0]
+        
+        cancelID_dict = Joy188Test.select_CancelId(Joy188Test.get_conn(envs),user)#抓出 該用戶 今天投注 還在等待開獎的 key: orderid .value: lotteryid
+        orderid = random.choices(list(cancelID_dict.keys()))[0]#隨機取一個orderid
+        lotteryname = cancelID_dict[orderid][0]
+        order_code = cancelID_dict[orderid][1]
 
-            data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"","sessionId":token_[user]},"body":{"pager":{"startNo":"1","endNo":"99999"},"param":{
-                "CGISESSID":token_[user],"id": str(orderid),"app_id":"9","come_from":"3","appname":"1"}}}
-            r = requests.post(env+'game/cancelGame',data=json.dumps(data_),headers=App_header)
-            print('撤消彩種: %s ,方案編號: %s '%(lottery_dict[can_lottery][0] ,
-                                         list(order_dict[can_lottery].keys())[0]))  
-            if r.json()['head']['status'] == 0:
-                print('撤消成功')
-                break
-            else:
-                print('撤銷失敗')
+        data_ = {"head":{"sowner":"","rowner":"","msn":"","msnsn":"","userId":"","userAccount":"","sessionId":token_[user]},"body":{"pager":{"startNo":"1","endNo":"99999"},"param":{
+            "CGISESSID":token_[user],"id": str(orderid),"app_id":"9","come_from":"3","appname":"1"}}}
+        r = requests.post(env+'game/cancelGame',data=json.dumps(data_),headers=App_header)
+        print('撤消彩種: %s ,方案編號: %s '%(lotteryname ,order_code))  
+        if r.json()['head']['status'] == 0:
+            print('撤消成功')
+        else:
+            print('撤銷失敗')
             
     @staticmethod
     def test_OpenLink():
@@ -3100,7 +3107,7 @@ Joy188Test.test_Login()#一般登入
 Joy188Test3.test_iapiLogin()#app登入
 
 #In[]
-Joy188Test3.test_OpenLink()
+Joy188Test3.test_IapiCancelSubmit()
 
 # In[ ]:
 Joy188Test3.test_IapiPlanSubmit()# app追號
@@ -3121,15 +3128,13 @@ Joy188Test3.test_AppRegister()#APP註冊
 # In[]:
 cookies_
 #In[]:
-Joy188Test.test_LotteryPlanSubmit()
+Joy188Test.test_188()
 
 
 # In[203]:
 #account = env_dict['合營1940'][envs]
-for i in range(5):
-    for i in cookies_:
-        Joy188Test.test_LotteryPlanSubmit(account=i)#一般追號
-        Joy188Test.test_CancelOrder()
+
+Joy188Test.test_CancelOrder()
 
 
 # In[ ]:
@@ -3159,8 +3164,7 @@ env_name = {0: 'dev',1: '188' }
 # 追號 先測試 用
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    order_dict= {}# 存放 order_code 和 orderid
-    
+
     tests = [Joy188Test('test_Login'),Joy188Test('test_redEnvelope'),Joy188Test('test_LotterySubmit'),
              Joy188Test('test_CancelOrder'),Joy188Test('test_LotteryPlanSubmit'),
              Joy188Test('test_ThirdHome'),Joy188Test('test_188'),Joy188Test('test_chart'),
