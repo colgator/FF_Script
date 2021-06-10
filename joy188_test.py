@@ -42,27 +42,22 @@ fake = Factory.create()
 card = (fake.credit_card_number(card_type='visa16'))#產生一個16位的假卡號
 print(card)
 
-# In[]:
-class Testsss(unittest.TestCase):
-    def __init__(self,case):
-        super().__init__(case)
-    def test_1(self):
-        print('hsieh')
 
-#In[]:
-if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    suite_list = []
-    suite_list.append( Testsss('test_1') )
-    print(suite_list,suite_list[0])
-    suite.addTest(suite_list[0])
-    runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(suite)
 
 # In[207]:
 
 class Joy188Test(unittest.TestCase):
     u"trunk接口測試"
+    '''
+    如果要在 unittest的架構下,多傳參數, 必續 先繼承 uniitest 的case
+    預設帶一個 登入case, 是為了單純使用 接口 ,不用unittest 話 , 如下
+    ex: Joy188Test().test_Login() ,case參數如果不給 ,如下
+    ex: Joy188Test(case='test_Login').test_Login() 
+    之前寫的staticmethod 完全不影響, 因為完全沒加參數 ,有在案例增加self參數的 才有(test_LotterySubmit 投注)
+    '''
+    def __init__(self,case='test_Login',account=''):
+        self.case = super().__init__(case)
+        self.account = account
 
     @staticmethod
     def md(password,param):
@@ -91,8 +86,7 @@ class Joy188Test(unittest.TestCase):
         global cookies
         cookies = r.cookies.get_dict()#獲得登入的cookies 字典
         admin_header['ANVOAID'] =  cookies['ANVOAID'] 
-    @staticmethod
-    def test_Login():
+    def test_Login(self):
         u"登入測試"
         global user#傳給webdriver方法 當登入用戶參數
         global  pass_list#傳入 werbdriver登入的密碼 
@@ -106,50 +100,53 @@ class Joy188Test(unittest.TestCase):
         post_url  = url_dict[envs][0]
         em_url = url_dict[envs][1]
         pass_list = {0: b'123qwe',1:b'amberrd'}
-
-
-        account_ ={0: {
-                'dev02': [{'hsieh000':u'總代','hsieh001':u'一代','hsiehthird001':'一代','hsieh001001':'','hsieh001002':'',
-                'hsieh0420001':''},'一般4.0'],
-                'fh82dev02': [{'hsiehwin000':u'總代','hsiehwin001':u'一代','hsiehwin1940test':'合營1940'
-                              },'一般合營']
-        } ,1:{
-               'joy188.teny2020':[{'kerrwin000':u'總代','kerrwin001':u'一代'},'合營teny'],
-               'joy188.195353':[{'kerrwin1940test':u'合營1940'},'一般合營'],
-               'joy188.88hlqp':[{'hlqp001':u'總代','kerrlc001':u'玩家'},'歡樂棋牌'],
-                'joy188':[{'kerr000':u'總代','kerr001':u'一代','kerr43453':u'玩家',
-                'kerrthird001':'二代'},'一般4.0']}
-                  }#各環境 的用戶 登入
-        userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.100 Safari/537.36"     
-        
+        userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.100 Safari/537.36"             
         Pc_header = {
             'User-Agent': userAgent 
         }
         global session
         while True:
             try:
-                for e in account_[envs].keys():# e為環境
-                    print(e,account_[envs][e][1])#環境和名稱 
-                    for user,username in account_[envs][e][0].items():# account_[e] 為環境key 的values , 在loop 找出user名
+                if self.account == '':#預設
+                    account_ = FF_.Env().trunk_login
+                    for e in account_[envs].keys():# e為環境
+                        print(e,account_[envs][e][1])#環境和名稱 
+                        for user,username in account_[envs][e][0].items():# account_[e] 為環境key 的values , 在loop 找出user名
+                            postData = {
+                            "username": user,
+                            "password": Joy188Test.md(pass_list[envs],b'f4a30481422765de945833d10352ea18'),#密碼和param直
+                            "param" :b'f4a30481422765de945833d10352ea18'
+                             }
+                            session = requests.Session()
+                            if envs == 0:# dev 環境
+                                login_url = "http://www.%s.com"%e
+                            else:
+                                login_url = 'http://www2.%s.com'%e
+                            r = session.post(  login_url +'/login/login',data = postData,
+                                    headers = Pc_header )
+                            cookies = r.cookies.get_dict()#獲得登入的cookies 字典
+                            cookies_.setdefault(user,cookies['ANVOID'])
+                            t = time.strftime('%Y%m%d %H:%M:%S')
+                            print(u'登錄帳號: %s,登入身分: %s'%(user,username)+u',現在時間:'+t)
+                            print(r.text)
+                    Joy188Test.admin_login()
+                    break
+                else:# 跑動帶 指教參數 的account_list 
+                    for user in self.account:
                         postData = {
                             "username": user,
                             "password": Joy188Test.md(pass_list[envs],b'f4a30481422765de945833d10352ea18'),#密碼和param直
                             "param" :b'f4a30481422765de945833d10352ea18'
                         }
                         session = requests.Session()
-                        if envs == 0:# dev 環境
-                            login_url = "http://www.%s.com"%e
-                        else:
-                            login_url = 'http://www2.%s.com'%e
-                        r = session.post(  login_url +'/login/login',data = postData,
+                        r = session.post(  post_url +'/login/login',data = postData,
                                 headers = Pc_header )
                         cookies = r.cookies.get_dict()#獲得登入的cookies 字典
                         cookies_.setdefault(user,cookies['ANVOID'])
                         t = time.strftime('%Y%m%d %H:%M:%S')
-                        print(u'登錄帳號: %s,登入身分: %s'%(user,username)+u',現在時間:'+t)
+                        print(u'登錄帳號: %s'%(user)+u',現在時間:'+t)
                         print(r.text)
-                Joy188Test.admin_login()
-                break
+                    break
             except requests.exceptions.ConnectionError:
                 print('please wait!')
                 break
@@ -1040,7 +1037,7 @@ class Joy188Test(unittest.TestCase):
         print('投注帳號: %s'%account)
         for i in lottery_dict.keys(): 
         #for i in lottery_115:
-        #for i in ['jlffc','ptxffc','hnffc','cqssc','xjssc','hljssc']:
+        #for i in ['jlffc','ptxffc','hnffc','cqssc','xjssc','hljssc','slmmc']:
         #for i in lottery_sh:
             while True:
                 try:
@@ -1146,10 +1143,9 @@ class Joy188Test(unittest.TestCase):
                     #print(e)
                     print("彩種: %s 投注失敗"%lottery_dict[i][0]+"\n")
                     break
-    @staticmethod
-    def test_LotterySubmit():
+    def test_LotterySubmit(self):
         u"投注測試"
-        Joy188Test.test_Submit(account=env_dict['一般帳號'][envs],plan=1,moneyunit=1)#env_dict['一般帳號'][envs],moneyunit=1,))#
+        Joy188Test.test_Submit(account=self.account,plan=1,moneyunit=1)#env_dict['一般帳號'][envs],moneyunit=1,))#
     @staticmethod
     def test_LotteryPlanSubmit():
         u"追號測試"
@@ -3094,20 +3090,26 @@ class Joy188Test3(unittest.TestCase):
 # In[ ]:
 
 
-envs = 1
+envs = 0
 
 #In[]:
 Joy188Test2.test_safepersonal()
 
 # In[191]:
-Joy188Test.test_Login()#一般登入
+account_list = ['kerr{:03d}'.format(i) for i in range(10)]
+Joy188Test(account=account_list).test_Login()#一般登入 ,#指定account_list
+#In[191]:
+Joy188Test().test_Login()#預設不待account,就是走trunk寫死用戶
+#In[]:
+
+cookies_
 
 # In[205]:
 
 Joy188Test3.test_iapiLogin()#app登入
 
 #In[]
-Joy188Test3.test_IapiCancelSubmit()
+Joy188Test('test_transferout').test_transferout()
 
 # In[ ]:
 Joy188Test3.test_IapiPlanSubmit()# app追號
@@ -3118,12 +3120,17 @@ Joy188Test3.test_iapiSubmit()#app投注
 # In[]
 Joy188Test.test_chart()
 
-# In[208]:
+#In[]
 
-Joy188Test.test_LotterySubmit()#一般投注
+Joy188Test(account=env_dict['一般帳號'][envs]).test_LotterySubmit()
+
+#In[] 
+#從account_list 為動態 登入用戶
+for account in account_list:
+    Joy188Test('test_LotterySubmit',account=account).test_LotterySubmit()#一般投注
 
 # In[ ]:
-Joy188Test3.test_AppRegister()#APP註冊
+Joy188Test3.test_IapiWithDraw()
 
 # In[]:
 cookies_
@@ -3141,16 +3148,18 @@ Joy188Test.test_CancelOrder()
 
 
 if __name__ == '__main__':
+    envs = 1# 0 dev , 1 : 188
     suite = unittest.TestSuite()
-    test = [Joy188Test('test_Login'),Joy188Test('test_LotterySubmit')
-             ,Joy188Test('test_LotteryPlanSubmit'),Joy188Test('test_tranUser')]
+    #account = env_dict['一般帳號'][envs]
+    test = [Joy188Test('test_Login')]
     
     suite.addTests(test)
 
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
     
-
+# In[ ]:
+env_dict
 
 # In[ ]:
 
@@ -3165,7 +3174,7 @@ env_name = {0: 'dev',1: '188' }
 if __name__ == '__main__':
     suite = unittest.TestSuite()
 
-    tests = [Joy188Test('test_Login'),Joy188Test('test_redEnvelope'),Joy188Test('test_LotterySubmit'),
+    tests = [Joy188Test('test_Login'),Joy188Test('test_redEnvelope'),Joy188Test('test_LotterySubmit',account=env_dict['一般帳號'][envs]),
              Joy188Test('test_CancelOrder'),Joy188Test('test_LotteryPlanSubmit'),
              Joy188Test('test_ThirdHome'),Joy188Test('test_188'),Joy188Test('test_chart'),
     Joy188Test('test_thirdBalance'),Joy188Test('test_transferin'),Joy188Test('test_transferout'),
@@ -3193,9 +3202,9 @@ if __name__ == '__main__':
     #suite.addTests(test)
 
 
-    suite.addTests(tests)
+    #suite.addTests(tests)
     suite.addTests(tests2)
-    suite.addTests(app)
+    #suite.addTests(app)
 
 
     now = time.strftime('%Y_%m_%d^%H-%M-%S')
