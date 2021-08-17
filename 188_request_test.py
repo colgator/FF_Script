@@ -2860,7 +2860,7 @@ class GameBoxTest_User(GameBoxTest_Admin):
 
 # 0 : gamebox , 1: 沙巴 ,2: sexy, 3 : cq9 , 4: gpi,5: YB,6: PG, 7:bg ,8: tfGaming,9: imSb ,10: ya_bo_lottery
 #11: JDB  12: bbin 13: yx_game
-client_env = 16
+client_env = 1
 env = 1# 0為 43 測試 , 1 為 54 灰度   
 supplier_list = [0,1]
 bg_type = 'lottery' #['game','fish','chess','lottery']

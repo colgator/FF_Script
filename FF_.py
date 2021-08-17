@@ -1,6 +1,6 @@
 class Env:
     def __init__(self):
-        self.env_dict = {'測試總代': ['hsieh000','kerr000'] ,'一般帳號': ['hsieh001','kerr001'],'合營1940': ['hsiehwin1940test','kerrwin1940test'],'轉入/轉出':['hsiehthird001','kerrthird001'],'APP帳號': ['hsiehapp001','kerrapp001'],'玩家':['hsieh0620','kerr010'],'APP合營': ['hsiehwin','kerrwin1940' ]}
+        self.env_dict = {'測試總代': ['hsieh000','kerr000'] ,'一般帳號': ['hsieh001','kerr001'],'合營1940': ['hsiehwin1940test','kerrwin1940test'],'轉入/轉出':['kerrthird001','kerrthird001'],'APP帳號': ['hsiehapp001','kerrapp001'],'玩家':['hsieh0620','kerr010'],'APP合營': ['hsiehwin','kerrwin1940' ]}
         self.url_dict =  {0:['http://www.dev02.com','http://em.dev02.com'],
         1:['http://www2.joy188.com','http://em.joy188.com']}
         self.iapi_url = {0: 'http://10.13.22.152:8199/', 1: 'http://iphong.joy188.com/'}
